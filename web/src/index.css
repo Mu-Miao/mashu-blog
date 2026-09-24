@@ -2,6 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-stone-50 text-stone-800 antialiased;
+html {
+  scroll-behavior: smooth;
 }
+
+body {
+  @apply bg-canvas font-sans text-ink antialiased dark:bg-[#0a0a0c] dark:text-white/90;
+  font-feature-settings: "cv11", "ss01";
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  @apply bg-accent/15;
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-[#0077ed] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40;
+    border-radius: 980px;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center border border-line bg-white px-4 py-1.5 text-sm font-medium text-ink transition hover:bg-canvas-dim active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40 dark:border-white/15 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10;
+    border-radius: 980px;
+  }
+  .pill {
+    @apply inline-flex items-center px-3 py-1 text-xs font-medium transition;
+    border-radius: 980px;
+  }
+  .surface {
+    @apply rounded-card border border-line bg-white shadow-card dark:border-white/10 dark:bg-[#151518] dark:shadow-none;
+  }
+  .field {
+    @apply w-full border border-line bg-white px-4 py-2.5 text-sm text-ink outline-none transition placeholder:text-ink-faint focus:border-accent focus:ring-4 focus:ring-accent/10 dark:border-white/15 dark:bg-[#151518] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-accent;
+    border-radius: 12px;
+  }
+}
+
+/* Apple: 交互反馈挂在 press 上而非 release —— 选中态即时响应 */
+.button:active,
+button:active,
+a:active {
+  transition-duration: 100ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-fade-up,
+  .animate-pulse {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  header.sticky {
+    @apply bg-white backdrop-blur-none;
+  }
+}
+

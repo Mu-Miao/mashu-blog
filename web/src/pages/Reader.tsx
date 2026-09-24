@@ -4,14 +4,50 @@ import { format } from "date-fns";
 import { api, type PostDetail } from "../lib/api";
 import Rendered from "../components/Rendered";
 import PostListPage from "../components/PostListPage";
+import Hero from "../components/Hero";
+
+function Page({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
+  return (
+    <div className={`mx-auto w-full px-5 py-10 sm:py-14 ${wide ? "max-w-4xl" : "max-w-3xl"}`}>
+      {children}
+    </div>
+  );
+}
+
+function PageTitle({ title, sub }: { title: string; sub?: string }) {
+  return (
+    <header className="mb-8 text-center">
+      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl dark:text-white">{title}</h1>
+      {sub && <p className="mt-2 text-sm text-ink-soft dark:text-white/50">{sub}</p>}
+    </header>
+  );
+}
 
 export function Home() {
-  return <PostListPage query={(p) => `/posts?page=${p}`} />;
+  return (
+    <>
+      <Hero />
+      <Page>
+        <div className="mb-6 flex items-baseline justify-between">
+          <h2 className="text-xl font-semibold tracking-tight dark:text-white">最新文章</h2>
+          <Link to="/archive" className="text-sm text-accent-link hover:underline dark:text-sky-400">
+            归档 →
+          </Link>
+        </div>
+        <PostListPage query={(p) => `/posts?page=${p}`} />
+      </Page>
+    </>
+  );
 }
 
 export function TagPage() {
   const { name } = useParams();
-  return <PostListPage query={(p) => `/posts?page=${p}&tag=${encodeURIComponent(name ?? "")}`} />;
+  return (
+    <Page>
+      <PageTitle title={`# ${name ?? ""}`} sub="按标签浏览" />
+      <PostListPage query={(p) => `/posts?page=${p}&tag=${encodeURIComponent(name ?? "")}`} />
+    </Page>
+  );
 }
 
 export function Post() {
@@ -23,16 +59,48 @@ export function Post() {
     api.get<PostDetail>(`/posts/${encodeURIComponent(slug ?? "")}`)
       .then(setPost).catch(() => setMissing(true));
   }, [slug]);
-  if (missing) return <p className="text-stone-400">文章不存在</p>;
-  if (!post) return <p className="text-stone-400">加载中…</p>;
+  if (missing)
+    return (
+      <Page>
+        <p className="py-24 text-center text-ink-faint dark:text-white/40">文章不存在</p>
+      </Page>
+    );
+  if (!post)
+    return (
+      <Page>
+        <div className="h-8 w-2/3 animate-pulse rounded-lg bg-black/[0.06]" />
+        <div className="mt-10 space-y-3">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-4 animate-pulse rounded bg-black/[0.04]" />
+          ))}
+        </div>
+      </Page>
+    );
   return (
-    <article>
-      <h1 className="text-2xl font-bold">{post.title}</h1>
-      <p className="mt-1 text-sm text-stone-500">
-        {post.published_at && format(new Date(post.published_at), "yyyy-MM-dd HH:mm")}
-        {post.tags.map((t) => ` #${t}`).join("")}
-      </p>
-      <div className="mt-6"><Rendered html={post.rendered} /></div>
+    <article className="mx-auto w-full max-w-3xl px-5 py-10 sm:py-14">
+      <header className="mb-10 text-center">
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
+          {post.tags.map((t) => (
+            <Link key={t} to={`/tag/${encodeURIComponent(t)}`} className="pill bg-accent/10 text-accent-link hover:bg-accent/15 dark:bg-sky-400/15 dark:text-sky-400">
+              #{t}
+            </Link>
+          ))}
+        </div>
+        <h1 className="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-[40px] sm:leading-[1.15] dark:text-white">
+          {post.title}
+        </h1>
+        {post.published_at && (
+          <p className="mt-4 text-sm text-ink-faint dark:text-white/40">
+            {format(new Date(post.published_at), "yyyy 年 M 月 d 日 HH:mm")}
+          </p>
+        )}
+      </header>
+      <div className="surface p-6 sm:p-10">
+        <Rendered html={post.rendered} />
+      </div>
+      <div className="mt-8 text-center">
+        <Link to="/" className="btn-ghost">← 返回首页</Link>
+      </div>
     </article>
   );
 }
@@ -40,52 +108,93 @@ export function Post() {
 export function Archive() {
   const [groups, setGroups] = useState<{ ym: string; posts: PostDetail[] }[] | null>(null);
   useEffect(() => { api.get<{ ym: string; posts: PostDetail[] }[]>("/archive").then(setGroups); }, []);
-  if (!groups) return <p className="text-stone-400">加载中…</p>;
   return (
-    <div className="space-y-6">
-      {groups.map((g) => (
-        <section key={g.ym}>
-          <h2 className="font-semibold text-stone-500">{g.ym}</h2>
-          <ul className="mt-2 space-y-1 text-sm">
-            {g.posts.map((p) => (
-              <li key={p.slug}>
-                <Link className="hover:underline text-stone-700" to={`/post/${p.slug}`}>{p.title}</Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
-      {groups.length === 0 && <p className="text-stone-400">暂无文章</p>}
-    </div>
+    <Page>
+      <PageTitle title="归档" sub="按时间线回看所有文章" />
+      {!groups ? (
+        <div className="h-40 animate-pulse rounded-card bg-black/[0.04]" />
+      ) : (
+        <div className="space-y-10">
+          {groups.map((g) => (
+            <section key={g.ym}>
+              <h2 className="sticky top-12 z-10 -mx-1 bg-canvas/90 px-1 py-1 text-sm font-semibold text-ink-soft backdrop-blur dark:bg-[#0a0a0c]/90 dark:text-white/50">
+                {g.ym.replace("-", " 年 ")} 月
+              </h2>
+              <ul className="mt-2 divide-y divide-line rounded-card border border-line bg-white px-6 shadow-card dark:divide-white/10 dark:border-white/10 dark:bg-[#151518] dark:shadow-none">
+                {g.posts.map((p) => (
+                  <li key={p.slug}>
+                    <Link
+                      to={`/post/${p.slug}`}
+                      className="group flex items-baseline justify-between gap-4 py-4 text-[15px] transition-colors hover:text-accent-link dark:text-white/85 dark:hover:text-sky-400"
+                    >
+                      <span className="font-medium">{p.title}</span>
+                      <span className="shrink-0 text-xs text-ink-faint dark:text-white/40">
+                        {p.published_at && format(new Date(p.published_at), "M 月 d 日")}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+          {groups.length === 0 && (
+            <p className="rounded-card bg-black/[0.03] py-16 text-center text-sm text-ink-faint dark:bg-white/[0.04] dark:text-white/40">暂无文章</p>
+          )}
+        </div>
+      )}
+    </Page>
   );
 }
 
 export function Search() {
   const [q, setQ] = useState("");
   const [results, setResults] = useState<PostDetail[] | null>(null);
+  const [busy, setBusy] = useState(false);
   async function run(e: React.FormEvent) {
     e.preventDefault();
     if (!q.trim()) return;
-    setResults(await api.get<PostDetail[]>(`/search?q=${encodeURIComponent(q.trim())}`));
+    setBusy(true);
+    try {
+      setResults(await api.get<PostDetail[]>(`/search?q=${encodeURIComponent(q.trim())}`));
+    } finally {
+      setBusy(false);
+    }
   }
   return (
-    <div>
-      <form onSubmit={run} className="flex gap-2">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="搜索文章…"
-          className="flex-1 rounded border border-stone-300 px-3 py-2 text-sm outline-none focus:border-stone-500" />
-        <button className="rounded bg-stone-800 px-4 py-2 text-sm text-white">搜索</button>
+    <Page>
+      <PageTitle title="搜索" sub="全文检索，覆盖标题与正文" />
+      <form onSubmit={run} className="mx-auto flex max-w-xl gap-2">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="输入关键词…"
+          className="field !rounded-pill px-5"
+          autoFocus
+        />
+        <button className="btn-primary shrink-0" disabled={busy}>
+          {busy ? "搜索中…" : "搜索"}
+        </button>
       </form>
       {results && (
-        <ul className="mt-4 space-y-2 text-sm">
+        <ul className="mx-auto mt-8 max-w-xl space-y-3">
           {results.map((p) => (
             <li key={p.slug}>
-              <a className="hover:underline" href={`/post/${p.slug}`}>{p.title}</a>
-              <span className="ml-2 text-stone-400">{p.summary.slice(0, 60)}</span>
+              <Link
+                to={`/post/${p.slug}`}
+                className="surface block p-5 transition hover:-translate-y-0.5 hover:shadow-lift"
+              >
+                <p className="font-medium dark:text-white">{p.title}</p>
+                <p className="mt-1 line-clamp-2 text-sm text-ink-soft dark:text-white/55">{p.summary}</p>
+              </Link>
             </li>
           ))}
-          {results.length === 0 && <li className="text-stone-400">没有匹配结果</li>}
+          {results.length === 0 && (
+            <li className="rounded-card bg-black/[0.03] py-12 text-center text-sm text-ink-faint dark:bg-white/[0.04] dark:text-white/40">
+              没有匹配结果
+            </li>
+          )}
         </ul>
       )}
-    </div>
+    </Page>
   );
 }

@@ -4,28 +4,36 @@ import type { PostSummary } from "../lib/api";
 
 export default function PostCard({ post }: { post: PostSummary }) {
   return (
-    <article className="border-b border-stone-200 py-5">
-      <h2 className="text-lg font-semibold">
-        <Link to={`/post/${post.slug}`} className="hover:underline">
+    <article className="group rounded-card border border-line bg-white p-6 shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lift sm:p-7 dark:border-white/10 dark:bg-[#151518] dark:hover:bg-[#19191d]">
+      <div className="flex items-center gap-2 text-xs text-ink-faint dark:text-white/40">
+        {post.published_at && (
+          <time>{format(new Date(post.published_at), "yyyy 年 M 月 d 日")}</time>
+        )}
+        {post.status === "draft" && (
+          <span className="pill bg-amber-50 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400">草稿</span>
+        )}
+      </div>
+      <h2 className="mt-2 text-lg font-semibold leading-snug tracking-tight sm:text-xl dark:text-white">
+        <Link to={`/post/${post.slug}`} className="transition-colors group-hover:text-accent-link">
           {post.title}
         </Link>
-        {post.status === "draft" && (
-          <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-700">草稿</span>
-        )}
       </h2>
-      <p className="mt-1 text-sm text-stone-500">
-        {post.published_at ? format(new Date(post.published_at), "yyyy-MM-dd") : ""}
-        {post.tags.length > 0 && " · "}
-        {post.tags.map((t, i) => (
-          <span key={t}>
-            {i > 0 && " "}
-            <Link to={`/tag/${encodeURIComponent(t)}`} className="text-sky-700 hover:underline">
+      {post.summary && (
+        <p className="mt-2 line-clamp-2 text-sm leading-6 text-ink-soft dark:text-white/60">{post.summary}</p>
+      )}
+      {post.tags.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {post.tags.map((t) => (
+            <Link
+              key={t}
+              to={`/tag/${encodeURIComponent(t)}`}
+              className="pill bg-canvas-dim text-ink-soft hover:bg-accent/10 hover:text-accent-link dark:bg-white/10 dark:text-white/55 dark:hover:bg-accent/20 dark:hover:text-sky-400"
+            >
               #{t}
             </Link>
-          </span>
-        ))}
-      </p>
-      {post.summary && <p className="mt-2 text-sm text-stone-600 line-clamp-3">{post.summary}</p>}
+          ))}
+        </div>
+      )}
     </article>
   );
 }
