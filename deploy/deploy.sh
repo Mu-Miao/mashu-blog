@@ -18,7 +18,8 @@ else
   echo "(no web/dist, backend-only)"
 fi
 
-ssh "$BLOG_HOST" "python3 -m venv /opt/blog/venv 2>/dev/null || true
+ssh "$BLOG_HOST" "PY=\$(cat /opt/blog/python-bin 2>/dev/null || echo python3)
+\$PY -m venv /opt/blog/venv 2>/dev/null || { \$PY -m ensurepip 2>/dev/null; \$PY -m venv /opt/blog/venv; }
 /opt/blog/venv/bin/pip install -q -e /opt/blog/server
 systemctl restart blog
 systemctl is-active blog nginx"
