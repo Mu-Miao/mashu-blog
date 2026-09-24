@@ -65,6 +65,16 @@ def test_admin_all_requires_login(client):
     assert client.get("/api/v1/posts?all=1").status_code == 401
 
 
+def test_archive_ok(client):
+    login(client)
+    client.post("/api/v1/posts", json={"title": "Arch Me", "kind": "md",
+                                       "body": "b", "tags": ["a"], "status": "published"})
+    r = client.get("/api/v1/archive")
+    assert r.status_code == 200
+    assert any(p["title"] == "Arch Me" and p["tags"] == ["a"]
+               for g in r.json() for p in g["posts"])
+
+
 def test_html_sanitized_and_unique_slug(client):
     login(client)
     r = client.post("/api/v1/posts", json={

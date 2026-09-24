@@ -92,17 +92,17 @@ def list_tags():
 
 @router.get("/archive")
 def archive():
+    groups: dict[str, list] = {}
     with get_session() as s:
         posts = s.exec(
             select(Post).where(Post.status == "published")
             .order_by(Post.published_at.desc())
         ).all()
-    groups: dict[str, list] = {}
-    for p in posts:
-        if not p.published_at:
-            continue
-        groups.setdefault(p.published_at.strftime("%Y-%m"), []).append(
-            crud.post_to_dict(p))
+        for p in posts:
+            if not p.published_at:
+                continue
+            groups.setdefault(p.published_at.strftime("%Y-%m"), []).append(
+                crud.post_to_dict(p))
     return [{"ym": ym, "posts": ps} for ym, ps in groups.items()]
 
 
