@@ -39,6 +39,10 @@ dos2unix /etc/systemd/system/blog.service /tmp/blog.nginx /etc/nginx/sites-avail
 nginx -t && systemctl restart nginx
 systemctl daemon-reload
 systemctl enable blog
+if command -v getenforce >/dev/null && [ "$(getenforce)" = "Enforcing" ]; then
+  setsebool -P httpd_can_network_connect 1 || true
+  semanage port -a -t http_port_t -p tcp 8080 2>/dev/null || true
+fi
 if command -v firewall-cmd >/dev/null && firewall-cmd --state >/dev/null 2>&1; then
   firewall-cmd --permanent --add-port=8080/tcp && firewall-cmd --reload && echo "firewalld 放行 8080"
 elif command -v ufw >/dev/null && ufw status | grep -q active; then
