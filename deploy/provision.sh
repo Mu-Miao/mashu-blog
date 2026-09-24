@@ -7,7 +7,7 @@ ssh "$BLOG_HOST" "apt-get update && apt-get -y install nginx python3-venv rsync 
 ssh "$BLOG_HOST" "mkdir -p /opt/blog /var/www/blog /srv/blog"
 scp deploy/blog.service "$BLOG_HOST:/etc/systemd/system/blog.service"
 scp deploy/blog.nginx "$BLOG_HOST:/etc/nginx/sites-available/blog"
-ssh "$BLOG_HOST" "dos2unix /etc/systemd/system/blog.service /etc/nginx/sites-available/blog 2>/dev/null; ln -sf /etc/nginx/sites-available/blog /etc/nginx/sites-enabled/blog; rm -f /etc/nginx/sites-enabled/default; nginx -t && systemctl reload nginx; systemctl daemon-reload; systemctl enable blog"
+ssh "$BLOG_HOST" "dos2unix /etc/systemd/system/blog.service /etc/nginx/sites-available/blog 2>/dev/null; ln -sf /etc/nginx/sites-available/blog /etc/nginx/sites-enabled/blog; rm -f /etc/nginx/sites-enabled/default; nginx -t && systemctl restart nginx; systemctl daemon-reload; systemctl enable blog"
 
 # 生成环境变量（已存在则不覆盖）
 if ! ssh "$BLOG_HOST" "test -f /etc/blog.env"; then

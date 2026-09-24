@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 部署：本地构建前端 -> rsync 后端+前端 -> 装依赖 -> 重启服务
+# 部署：本地构建前端 -> tar/ssh 上传后端+前端 -> 装依赖 -> 重启服务
 # 用法：BLOG_HOST=root@120.26.177.214 bash deploy/deploy.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -9,8 +9,14 @@ if [ -d web ]; then
   (cd web && npm run build)
 fi
 
-rsync -az --delete --exclude .venv --exclude .blogdata --exclude __pycache__ --exclude "*.egg-info" server/ "$BLOG_HOST:/opt/blog/server/"
-[ -d web/dist ] && rsync -az --delete web/dist/ "$BLOG_HOST:/var/www/blog/"
+ssh "$BLOG_HOST" "mkdir -p /opt/blog/server /var/www/blog && rm -rf /opt/blog/server/* /var/www/blog/*"
+tar cf - -C server --exclude .venv --exclude .blogdata --exclude __pycache__ --exclude "*.egg-info" . \
+  | ssh "$BLOG_HOST" "tar xf - -C /opt/blog/server"
+if [ -d web/dist ]; then
+  tar cf - -C web/dist . | ssh "$BLOG_HOST" "tar xf - -C /var/www/blog"
+else
+  echo "(no web/dist, backend-only)"
+fi
 
 ssh "$BLOG_HOST" "python3 -m venv /opt/blog/venv 2>/dev/null || true
 /opt/blog/venv/bin/pip install -q -e /opt/blog/server
