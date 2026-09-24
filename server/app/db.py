@@ -14,14 +14,21 @@ engine = create_engine(config.DATABASE_URL, connect_args={"check_same_thread": F
 
 FTS_SQL = (
     "CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts USING fts5("
-    "post_id UNINDEXED, title, body, tokenize='unicode61')"
+    "post_id UNINDEXED, title, body, tokenize='trigram')"
 )
 
 
 def init_db() -> None:
     SQLModel.metadata.create_all(engine)
+    from sqlalchemy import text
     with engine.begin() as c:
+        row = c.execute(text(
+            "SELECT sql FROM sqlite_master WHERE name='posts_fts'")).fetchone()
+        if row and "trigram" not in (row[0] or ""):
+            c.execute(text("DROP TABLE posts_fts"))
         c.execute(text(FTS_SQL))
+    with Session(engine) as s:
+        sync_fts(s)
 
 
 def sync_fts(session: Session) -> None:

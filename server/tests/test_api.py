@@ -65,6 +65,18 @@ def test_admin_all_requires_login(client):
     assert client.get("/api/v1/posts?all=1").status_code == 401
 
 
+def test_search_chinese(client):
+    login(client)
+    client.post("/api/v1/posts", json={"title": "嵌入式学习笔记", "kind": "md",
+                                       "body": "中断控制器与DMA", "status": "published"})
+    hits = client.get("/api/v1/search?q=嵌入式学习").json()
+    assert any(h["title"] == "嵌入式学习笔记" for h in hits)  # trigram 路径
+    hits = client.get("/api/v1/search?q=笔记").json()
+    assert any(h["title"] == "嵌入式学习笔记" for h in hits)  # 短查询 LIKE 路径
+    hits = client.get("/api/v1/search?q=中断控制器").json()
+    assert any(h["title"] == "嵌入式学习笔记" for h in hits)  # 正文中文命中
+
+
 def test_archive_ok(client):
     login(client)
     client.post("/api/v1/posts", json={"title": "Arch Me", "kind": "md",

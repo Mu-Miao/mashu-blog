@@ -108,13 +108,20 @@ def archive():
 
 @router.get("/search")
 def search(q: str = Query(..., min_length=1)):
+    q = q.replace('"', "").strip()
+    if not q:
+        return []
     with get_session() as s:
-        rows = s.execute(
-            text("SELECT post_id FROM posts_fts WHERE posts_fts MATCH :q"),
-            {"q": '"' + q.replace('"', "") + '"'},
-        ).scalars().all()
-        ids = list(rows)
-        if not ids:
-            return []
-        posts = s.exec(select(Post).where(Post.id.in_(ids))).all()
+        if len(q) >= 3:
+            rows = s.execute(
+                text("SELECT post_id FROM posts_fts WHERE posts_fts MATCH :q"),
+                {"q": '"' + q + '"'},
+            ).scalars().all()
+            ids = list(rows)
+            posts = s.exec(select(Post).where(Post.id.in_(ids))).all() if ids else []
+        else:
+            like = f"%{q}%"
+            posts = s.exec(
+                select(Post).where(Post.title.like(like) | Post.body.like(like))
+            ).all()
         return [crud.post_to_dict(p) for p in posts if p.status == "published"]
