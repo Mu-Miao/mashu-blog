@@ -8,7 +8,7 @@ import Hero from "../components/Hero";
 
 function Page({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
   return (
-    <div className={`mx-auto w-full px-5 py-10 sm:py-14 ${wide ? "max-w-4xl" : "max-w-3xl"}`}>
+    <div className={`mx-auto w-full px-5 pt-24 pb-10 sm:pt-28 sm:pb-14 ${wide ? "max-w-4xl" : "max-w-3xl"}`}>
       {children}
     </div>
   );
@@ -77,7 +77,7 @@ export function Post() {
       </Page>
     );
   return (
-    <article className="mx-auto w-full max-w-3xl px-5 py-10 sm:py-14">
+    <article className="mx-auto w-full max-w-3xl px-5 pt-24 pb-10 sm:pt-28 sm:pb-14">
       <header className="mb-10 text-center">
         <div className="flex flex-wrap items-center justify-center gap-1.5">
           {post.tags.map((t) => (
@@ -117,7 +117,7 @@ export function Archive() {
         <div className="space-y-10">
           {groups.map((g) => (
             <section key={g.ym}>
-              <h2 className="sticky top-12 z-10 -mx-1 bg-canvas/90 px-1 py-1 text-sm font-semibold text-ink-soft backdrop-blur dark:bg-[#0a0a0c]/90 dark:text-white/50">
+              <h2 className="sticky top-[72px] z-10 -mx-1 bg-canvas/90 px-1 py-1 text-sm font-semibold text-ink-soft backdrop-blur dark:bg-[#0a0a0c]/90 dark:text-white/50">
                 {g.ym.replace("-", " 年 ")} 月
               </h2>
               <ul className="mt-2 divide-y divide-line rounded-card border border-line bg-white px-6 shadow-card dark:divide-white/10 dark:border-white/10 dark:bg-[#151518] dark:shadow-none">

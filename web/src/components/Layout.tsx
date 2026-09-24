@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
+import GlassSurface from "./GlassSurface";
 import { useTheme } from "../lib/theme";
 
 const nav =
@@ -30,29 +31,38 @@ function ThemeToggle() {
 export default function Layout() {
   return (
     <div className="flex min-h-screen flex-col bg-canvas dark:bg-[#0a0a0c]">
-      <header className="sticky top-0 z-50 border-b border-white/40 bg-white/[0.72] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-[#0a0a0c]/[0.72]">
-        <div className="mx-auto flex h-12 max-w-5xl items-center justify-between px-5">
-          <Link to="/" className="text-[15px] font-semibold tracking-tight text-ink dark:text-white">
-            麻薯<span className="text-pink-500 dark:text-pink-400">ta</span>爸<span className="text-ink-soft dark:text-white/50">的博客</span>
-          </Link>
-          <div className="flex items-center gap-1">
-            <nav className="flex items-center gap-1">
-              <NavLink to="/" className={({ isActive }) => `${nav} ${isActive ? navActive : ""}`} end>
-                首页
-              </NavLink>
-              <NavLink to="/archive" className={({ isActive }) => `${nav} ${isActive ? navActive : ""}`}>
-                归档
-              </NavLink>
-              <NavLink to="/search" className={({ isActive }) => `${nav} ${isActive ? navActive : ""}`}>
-                搜索
-              </NavLink>
-              <NavLink to="/admin" className={({ isActive }) => `${nav} ${isActive ? navActive : ""}`}>
-                管理
-              </NavLink>
-            </nav>
-            <ThemeToggle />
+      <header className="fixed inset-x-0 top-3 z-50 px-4">
+        <GlassSurface
+          width="100%"
+          height={52}
+          borderRadius={26}
+          backgroundOpacity={0.45}
+          saturation={1.4}
+          className="mx-auto max-w-5xl shadow-[0_8px_32px_rgb(0_0_0/0.12)]"
+        >
+          <div className="flex h-full w-full items-center justify-between px-5">
+            <Link to="/" className="text-[15px] font-semibold tracking-tight text-ink dark:text-white">
+              麻薯<span className="text-pink-500 dark:text-pink-400">ta</span>爸<span className="text-ink-soft dark:text-white/50">的博客</span>
+            </Link>
+            <div className="flex items-center gap-1">
+              <nav className="flex items-center gap-1">
+                <NavLink to="/" className={({ isActive }) => `${nav} ${isActive ? navActive : ""}`} end>
+                  首页
+                </NavLink>
+                <NavLink to="/archive" className={({ isActive }) => `${nav} ${isActive ? navActive : ""}`}>
+                  归档
+                </NavLink>
+                <NavLink to="/search" className={({ isActive }) => `${nav} ${isActive ? navActive : ""}`}>
+                  搜索
+                </NavLink>
+                <NavLink to="/admin" className={({ isActive }) => `${nav} ${isActive ? navActive : ""}`}>
+                  管理
+                </NavLink>
+              </nav>
+              <ThemeToggle />
+            </div>
           </div>
-        </div>
+        </GlassSurface>
       </header>
       <main className="flex-1">
         <Outlet />

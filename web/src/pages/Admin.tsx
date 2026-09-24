@@ -20,7 +20,7 @@ export function Login() {
     } finally { setBusy(false); }
   }
   return (
-    <div className="mx-auto flex w-full max-w-sm flex-col px-5 py-20">
+    <div className="mx-auto flex w-full max-w-sm flex-col px-5 pt-32 pb-20">
       <div className="surface p-8">
         <div className="text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-b from-[#3a3a3c] to-[#1d1d1f] text-2xl font-semibold text-white shadow-lift dark:from-[#5e5ce6] dark:to-[#30d158]">
@@ -62,7 +62,7 @@ export function AdminShell() {
     );
   if (me === null) return <Navigate to="/admin/login" replace />;
   return (
-    <div className="mx-auto w-full max-w-4xl px-5 py-10">
+    <div className="mx-auto w-full max-w-4xl px-5 pt-24 pb-10">
       <div className="mb-8 flex flex-wrap items-center gap-2">
         <NavLink to="/admin" className={({ isActive }) => `${tab} ${isActive ? tabActive : ""}`} end>
           文章
