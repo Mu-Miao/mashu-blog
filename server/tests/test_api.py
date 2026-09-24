@@ -53,7 +53,10 @@ def test_full_flow(client):
     assert any(h["slug"] == slug for h in hits)
     assert "os" in [t["name"] for t in client.get("/api/v1/tags").json()]
     client.put(f"/api/v1/posts/{pid}", json={"status": "draft"})
-    assert client.get(f"/api/v1/posts/{slug}").status_code == 404
+    assert client.get(f"/api/v1/posts/{slug}").status_code == 200  # 管理员可见草稿
+    client.cookies.clear()
+    assert client.get(f"/api/v1/posts/{slug}").status_code == 404  # 公众不可见
+    login(client)
     drafts = client.get("/api/v1/posts?all=1").json()["items"]
     assert any(d["id"] == pid for d in drafts)
 
