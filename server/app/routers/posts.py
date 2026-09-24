@@ -32,7 +32,7 @@ def list_posts(
         matched.sort(key=lambda p: (p.published_at or p.created_at, p.id), reverse=True)
         items = matched[(page - 1) * size: page * size]
         return {
-            "items": [crud.post_to_dict(p) for p in items],
+            "items": [crud.post_to_dict(p, include_body=bool(all and admin)) for p in items],
             "total": total, "page": page, "page_size": size,
         }
 
