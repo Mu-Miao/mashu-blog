@@ -145,4 +145,9 @@ def test_login_rate_limit(client):
     for _ in range(5):
         assert login(client, "bad").status_code == 401
     assert login(client).status_code == 429
+    # 不同 X-Real-IP（经 nginx）各自独立计数
+    r = client.post("/api/v1/auth/login",
+                    json={"username": "admin", "password": "***"},
+                    headers={"X-Real-IP": "1.2.3.4"})
+    assert r.status_code == 401
     auth_mod._attempts.clear()

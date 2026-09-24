@@ -22,7 +22,7 @@ def _locked(ip: str) -> bool:
 
 @router.post("/login")
 def login(body: dict, request: Request, response: Response):
-    ip = request.client.host if request.client else "?"
+    ip = request.headers.get("X-Real-IP") or (request.client.host if request.client else "?")
     if _locked(ip):
         return Response(status_code=429)
     with get_session() as s:
