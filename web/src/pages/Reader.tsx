@@ -5,10 +5,11 @@ import { api, type PostDetail } from "../lib/api";
 import Rendered from "../components/Rendered";
 import PostListPage from "../components/PostListPage";
 import Hero from "../components/Hero";
+import Featured from "../components/Featured";
 
-function Page({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
+function Page({ children, wide = false, flush = false }: { children: React.ReactNode; wide?: boolean; flush?: boolean }) {
   return (
-    <div className={`mx-auto w-full px-5 pt-24 pb-10 sm:pt-28 sm:pb-14 ${wide ? "max-w-4xl" : "max-w-3xl"}`}>
+    <div className={`mx-auto w-full px-5 pb-10 sm:pb-14 ${flush ? "pt-10" : "pt-24 sm:pt-28"} ${wide ? "max-w-4xl" : "max-w-3xl"}`}>
       {children}
     </div>
   );
@@ -27,7 +28,8 @@ export function Home() {
   return (
     <>
       <Hero />
-      <Page>
+      <Featured />
+      <Page flush>
         <div className="mb-6 flex items-baseline justify-between">
           <h2 className="text-xl font-semibold tracking-tight dark:text-white">最新文章</h2>
           <Link to="/archive" className="text-sm text-accent-link hover:underline dark:text-sky-400">
