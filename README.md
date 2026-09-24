@@ -30,6 +30,22 @@ bash deploy/backup.sh      # 备份 blog.db + uploads 到 backups/
 
 上线地址：`http://120.26.177.214:8080`，后台 `/admin/login`。
 
+## 免服务器模式（cloudflared 隧道，¥0）
+
+FastAPI 已支持单端口托管前端（存在 `web/dist` 时自动启用）：
+
+```bash
+# 临时公网预览（无需任何账号）
+tools/cloudflared.exe tunnel --url http://127.0.0.1:8000
+
+# 正式绑定 mashutaba.best（域名已在 Cloudflare，一次性授权后跑脚本）
+./tools/cloudflared.exe tunnel login
+bash deploy/tunnel-domain.sh
+./tools/cloudflared.exe tunnel run mashu-blog
+```
+
+缺点：依赖本机常开。ECS 就绪后按上面部署即可无缝切换。
+
 ## 脚本上传文章
 
 后台「API 密钥」页生成密钥后：
