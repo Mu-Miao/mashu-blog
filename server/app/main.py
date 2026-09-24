@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 
@@ -35,6 +36,17 @@ def create_app() -> FastAPI:
     app.include_router(import_.router, prefix=api)
     app.include_router(feed.router, prefix=api)
     app.mount("/uploads", StaticFiles(directory=config.UPLOADS_DIR), name="uploads")
+
+    dist = config.STATIC_DIR
+    if dist.is_dir():
+        app.mount("/assets", StaticFiles(directory=dist / "assets"), name="spa-assets")
+
+        @app.get("/{path:path}", include_in_schema=False)
+        def spa(path: str):
+            file = (dist / path).resolve()
+            if path and file.is_file() and file.is_relative_to(dist.resolve()):
+                return FileResponse(file)
+            return FileResponse(dist / "index.html")
     return app
 
 
