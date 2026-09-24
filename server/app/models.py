@@ -1,7 +1,11 @@
 from datetime import datetime, timezone
 
 from sqlmodel import Field, Relationship, SQLModel
-from sqlmodel.main import NaiveDatetime
+
+try:  # sqlmodel>=0.0.30 强制 tz-aware，需 NaiveDatetime；旧版直接用 datetime
+    from sqlmodel.main import NaiveDatetime
+except ImportError:
+    from datetime import datetime as NaiveDatetime
 
 
 def now() -> datetime:
