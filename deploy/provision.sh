@@ -38,7 +38,12 @@ fi
 dos2unix /etc/systemd/system/blog.service /tmp/blog.nginx /etc/nginx/sites-available/blog /etc/nginx/conf.d/blog.conf 2>/dev/null || true
 nginx -t && systemctl restart nginx
 systemctl daemon-reload
-systemctl enable blog'
+systemctl enable blog
+if command -v firewall-cmd >/dev/null && firewall-cmd --state >/dev/null 2>&1; then
+  firewall-cmd --permanent --add-port=8080/tcp && firewall-cmd --reload && echo "firewalld 放行 8080"
+elif command -v ufw >/dev/null && ufw status | grep -q active; then
+  ufw allow 8080/tcp && echo "ufw 放行 8080"
+fi'
 
 if ! ssh "$BLOG_HOST" "test -f /etc/blog.env"; then
   read -rsp "设置博主后台 admin 密码: " ADMIN_PASSWORD; echo
