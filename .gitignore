@@ -1,0 +1,9 @@
+**/.venv/
+**/node_modules/
+web/dist/
+*.db*
+.blogdata/
+.env
+__pycache__/
+*.egg-info/
+backups/
