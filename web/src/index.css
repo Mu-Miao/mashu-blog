@@ -50,7 +50,8 @@ a:active {
     scroll-behavior: auto;
   }
   .animate-fade-up,
-  .animate-pulse {
+  .animate-pulse,
+  .animate-bounce {
     animation: none;
   }
   * {
@@ -59,8 +60,8 @@ a:active {
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  header.sticky {
-    @apply bg-white backdrop-blur-none;
+  header.fixed {
+    @apply bg-white backdrop-blur-none dark:bg-[#0a0a0c];
   }
 }
 

@@ -14,7 +14,7 @@ export default function Featured() {
   }, []);
   if (!posts || posts.length < 2) return null;
   return (
-    <section className="border-b border-line bg-canvas-dim py-16 dark:border-white/10 dark:bg-[#101013] sm:py-20">
+    <section id="content" className="scroll-mt-20 border-b border-line bg-canvas-dim py-16 dark:border-white/10 dark:bg-[#101013] sm:py-20">
       <div className="mx-auto grid max-w-5xl items-center gap-12 px-5 md:grid-cols-2 md:gap-8">
         <div className="text-center md:text-left">
           <h2 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl dark:text-white">
