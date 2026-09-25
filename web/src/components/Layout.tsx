@@ -1,10 +1,14 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 import GlassSurface from "./GlassSurface";
+import GooeyNav from "./GooeyNav";
 import { useTheme } from "../lib/theme";
 
-const nav =
-  "rounded-pill px-4 py-1.5 text-sm text-ink/80 transition hover:bg-black/5 hover:text-ink dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white";
-const navActive = "bg-black/[0.06] font-medium text-ink dark:bg-white/15 dark:text-white";
+const NAV_ITEMS = [
+  { label: "首页", to: "/" },
+  { label: "归档", to: "/archive" },
+  { label: "搜索", to: "/search" },
+  { label: "管理", to: "/admin" },
+];
 
 function ThemeToggle() {
   const { theme, toggle } = useTheme();
@@ -44,21 +48,8 @@ export default function Layout() {
             <Link to="/" className="text-[15px] font-semibold tracking-tight text-ink dark:text-white">
               麻薯<span className="text-pink-500 dark:text-pink-400">ta</span>爸<span className="text-ink-soft dark:text-white/50">的博客</span>
             </Link>
-            <div className="flex items-center gap-1">
-              <nav className="flex items-center gap-1">
-                <NavLink to="/" className={({ isActive }) => `${nav} ${isActive ? navActive : ""}`} end>
-                  首页
-                </NavLink>
-                <NavLink to="/archive" className={({ isActive }) => `${nav} ${isActive ? navActive : ""}`}>
-                  归档
-                </NavLink>
-                <NavLink to="/search" className={({ isActive }) => `${nav} ${isActive ? navActive : ""}`}>
-                  搜索
-                </NavLink>
-                <NavLink to="/admin" className={({ isActive }) => `${nav} ${isActive ? navActive : ""}`}>
-                  管理
-                </NavLink>
-              </nav>
+            <div className="flex items-center gap-2">
+              <GooeyNav items={NAV_ITEMS} />
               <ThemeToggle />
             </div>
           </div>
