@@ -15,33 +15,31 @@ export default function Featured() {
       <div className="mx-auto max-w-5xl px-5 pt-16 text-center sm:pt-20">
         <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl dark:text-white">最新文章</h2>
         <p className="mx-auto mt-3 max-w-md text-[15px] leading-7 text-ink-soft dark:text-white/60">
-          在下方区域里继续滚动，文章卡片会一张张钉住、叠起来 —— 麻薯
+          继续下滑，文章卡片会一张张钉住、叠起来，叠完自动衔接下面的内容 —— 麻薯
           <span className="text-pink-500 dark:text-pink-400">ta</span>爸记录嵌入式、写作与生活的地方。
         </p>
       </div>
-      <div className="h-[80vh]">
-        <ScrollStack>
-          {posts.map((p) => (
-            <ScrollStackItem key={p.slug}>
-              <Link to={`/post/${p.slug}`} className="flex h-full flex-col">
-                <div className="flex items-center gap-2 text-xs text-ink-faint dark:text-white/40">
-                  {p.published_at && <time>{format(new Date(p.published_at), "yyyy 年 M 月 d 日")}</time>}
-                  {p.tags.map((t) => (
-                    <span key={t} className="pill bg-accent/10 text-accent-link dark:bg-sky-400/15 dark:text-sky-400">
-                      #{t}
-                    </span>
-                  ))}
-                </div>
-                <h3 className="mt-3 text-2xl font-semibold leading-snug tracking-tight dark:text-white">{p.title}</h3>
-                <p className="mt-3 line-clamp-3 flex-1 text-[15px] leading-7 text-ink-soft dark:text-white/60">
-                  {p.summary || "点击阅读全文"}
-                </p>
-                <span className="mt-4 text-sm font-medium text-accent-link dark:text-sky-400">阅读全文 →</span>
-              </Link>
-            </ScrollStackItem>
-          ))}
-        </ScrollStack>
-      </div>
+      <ScrollStack useWindowScroll itemDistance={90} itemStackDistance={36} baseScale={0.85} itemScale={0.04} blurAmount={2}>
+        {posts.map((p) => (
+          <ScrollStackItem key={p.slug}>
+            <Link to={`/post/${p.slug}`} className="flex h-full flex-col">
+              <div className="flex items-center gap-2 text-xs text-ink-faint dark:text-white/40">
+                {p.published_at && <time>{format(new Date(p.published_at), "yyyy 年 M 月 d 日")}</time>}
+                {p.tags.map((t) => (
+                  <span key={t} className="pill bg-accent/10 text-accent-link dark:bg-sky-400/15 dark:text-sky-400">
+                    #{t}
+                  </span>
+                ))}
+              </div>
+              <h3 className="mt-3 text-2xl font-semibold leading-snug tracking-tight dark:text-white">{p.title}</h3>
+              <p className="mt-3 line-clamp-3 flex-1 text-[15px] leading-7 text-ink-soft dark:text-white/60">
+                {p.summary || "点击阅读全文"}
+              </p>
+              <span className="mt-4 text-sm font-medium text-accent-link dark:text-sky-400">阅读全文 →</span>
+            </Link>
+          </ScrollStackItem>
+        ))}
+      </ScrollStack>
     </section>
   );
 }
