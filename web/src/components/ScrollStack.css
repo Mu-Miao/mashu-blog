@@ -1,12 +1,21 @@
-/* ScrollStack —— 适配 useWindowScroll 模式（页面级滚动，非内层滚动容器） */
+/* ScrollStack —— 还原 reactbits 原始几何（内层滚动容器 + 长跑道），仅做主题配色 */
 
 .scroll-stack-scroller {
   position: relative;
   width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  transform: translateZ(0);
+  will-change: scroll-position;
 }
 
 .scroll-stack-inner {
-  padding: 4vh 1.25rem 40vh;
+  padding: 20vh 5rem 50rem;
+  min-height: 100vh;
 }
 
 .scroll-stack-card {
@@ -18,22 +27,20 @@
   transform: translateZ(0);
   position: relative;
   box-sizing: border-box;
+  height: 20rem;
   width: 100%;
-  max-width: 42rem;
-  margin-inline: auto;
-  min-height: 15rem;
-  padding: 2rem;
-  border-radius: 24px;
-  border: 1px solid #e8e8ed;
+  margin: 30px 0;
+  padding: 3rem;
+  border-radius: 40px;
   background: #fff;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
+  border: 1px solid #e8e8ed;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
 }
 
 .dark .scroll-stack-card {
-  border-color: rgba(255, 255, 255, 0.1);
   background: #151518;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
 }
 
 .scroll-stack-end {
@@ -43,11 +50,12 @@
 
 @media (max-width: 640px) {
   .scroll-stack-inner {
-    padding: 2vh 1rem 30vh;
+    padding: 16vh 1.25rem 40rem;
   }
   .scroll-stack-card {
-    min-height: 13rem;
-    padding: 1.5rem;
-    border-radius: 20px;
+    height: auto;
+    min-height: 16rem;
+    padding: 1.75rem;
+    border-radius: 24px;
   }
 }

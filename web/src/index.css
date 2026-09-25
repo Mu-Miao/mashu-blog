@@ -3,8 +3,7 @@
 @tailwind utilities;
 
 html {
-  /* Lenis 平滑滚动接管, 原生 scroll-behavior 必须为 auto 否则每帧冲突 */
-  scroll-behavior: auto;
+  scroll-behavior: smooth;
 }
 
 body {
