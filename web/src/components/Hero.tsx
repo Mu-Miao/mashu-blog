@@ -44,8 +44,11 @@ const WAVE = {
 const hasWebGPU = typeof navigator !== "undefined" && "gpu" in navigator;
 
 function scrollToContent() {
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  document.getElementById("content")?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  const el = document.getElementById("content");
+  if (!el) return;
+  const lenis = (window as unknown as { __lenis?: { scrollTo: (t: Element, o?: object) => void } }).__lenis;
+  if (lenis) lenis.scrollTo(el, { offset: -70 });
+  else el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 }
 
 export default function Hero() {
