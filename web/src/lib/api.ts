@@ -5,6 +5,7 @@ export interface PostSummary {
 }
 export interface PostDetail extends PostSummary { body: string; rendered: string }
 export interface Paged<T> { items: T[]; total: number; page: number; page_size: number }
+export interface Adjacent { prev: PostSummary | null; next: PostSummary | null; related: PostSummary[] }
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, { credentials: "same-origin", ...init });

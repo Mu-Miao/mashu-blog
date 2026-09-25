@@ -1,6 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
-import { Archive, Home, Post, Search, TagPage } from "./pages/Reader";
+import { Archive, Home, NotFound, Post, Search, TagPage } from "./pages/Reader";
 import { AdminShell, Assets, Editor, Keys, Login, PostList } from "./pages/Admin";
 
 export default function App() {
@@ -20,6 +20,7 @@ export default function App() {
           <Route path="assets" element={<Assets />} />
           <Route path="keys" element={<Keys />} />
         </Route>
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   );

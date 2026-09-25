@@ -45,6 +45,24 @@ a:active {
   transition-duration: 100ms;
 }
 
+/* Apple: 阅读页分节进场 —— 弹性缓动，一次性 */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+}
+.reveal.reveal-in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.7s cubic-bezier(0.32, 0.72, 0, 1),
+    transform 0.7s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
