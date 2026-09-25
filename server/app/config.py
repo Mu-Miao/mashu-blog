@@ -11,5 +11,5 @@ if not SECRET_KEY or SECRET_KEY == "dev-secret":
 if not ADMIN_PASSWORD or ADMIN_PASSWORD == "admin123":
     raise RuntimeError("缺少 ADMIN_PASSWORD：请在 /etc/blog.env 配置强密码")
 UPLOADS_DIR = BLOG_DIR / "uploads"
-SITE_TITLE = os.environ.get("SITE_TITLE", "马叔塔巴的博客")
+SITE_TITLE = os.environ.get("SITE_TITLE", "麻薯ta爸的博客")
 STATIC_DIR = Path(os.environ.get("STATIC_DIR", Path(__file__).resolve().parents[2] / "web" / "dist"))

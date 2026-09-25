@@ -1,4 +1,4 @@
-# 马叔塔巴的个人博客
+# 麻薯ta爸的个人博客
 
 FastAPI + React + SQLite 个人博客，支持 Markdown/HTML 文章、网页后台与 API Key 脚本双通道上传、全文搜索、图片库。
 
