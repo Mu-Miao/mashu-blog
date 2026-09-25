@@ -11,10 +11,11 @@ type Props = {
   backgroundColor?: string;
   speed?: number;
   fade?: number;
+  targetFps?: number;
   className?: string;
 };
 
-const MAX_DPR = 2;
+const MAX_DPR = 1; // 全屏 2D 波浪: dpr 封顶 1, 否则像素量翻倍直接掉帧
 
 function parseHex(value: string): [number, number, number] {
   const m = /^#?([\da-f]{3}|[\da-f]{6})$/i.exec(value.trim());
@@ -62,12 +63,13 @@ export default function WavesCanvas({
   fontFamily = 'system-ui, "PingFang SC", sans-serif',
   fontWeight = 600,
   textSize = 0.38,
-  cellSize = 9,
+  cellSize = 12,
   dotSize = 0.72,
   color = "#929292",
   backgroundColor = "#060608",
   speed = 1,
   fade = 0.35,
+  targetFps = 30,
   className = ""
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -99,6 +101,7 @@ export default function WavesCanvas({
     let last = 0;
     let frameId = 0;
     let visible = true;
+    const frameInterval = 1000 / Math.max(1, Math.min(60, targetFps)); // 限帧: 波浪移动慢, 30fps 足够且省一半开销
 
     const layout = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
@@ -169,11 +172,12 @@ export default function WavesCanvas({
     };
 
     const tick = (now: number) => {
+      frameId = requestAnimationFrame(tick);
+      if (now - last < frameInterval) return; // 未到下一帧绘制时间, 跳过昂贵的整屏重绘
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
       last = now;
       time += dt * 0.6 * speed;
       draw();
-      frameId = requestAnimationFrame(tick);
     };
 
     const wake = () => {
@@ -214,7 +218,7 @@ export default function WavesCanvas({
       intersect.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [text, fontFamily, fontWeight, textSize, cellSize, dotSize, color, backgroundColor, speed, fade]);
+  }, [text, fontFamily, fontWeight, textSize, cellSize, dotSize, color, backgroundColor, speed, fade, targetFps]);
 
   return (
     <div ref={rootRef} className={`relative h-full w-full overflow-hidden ${className}`} style={{ backgroundColor }}>

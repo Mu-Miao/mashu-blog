@@ -112,7 +112,7 @@ export default function Hero() {
             onError={() => setGpuFailed(true)}
           />
         ) : (
-          <WavesCanvas {...WAVE} color={p.color} backgroundColor={p.backgroundColor} speed={0.9} fade={0.35} />
+          <WavesCanvas {...WAVE} cellSize={14} targetFps={30} color={p.color} backgroundColor={p.backgroundColor} speed={0.9} fade={0.35} />
         )}
       </div>
 
