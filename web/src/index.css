@@ -3,8 +3,7 @@
 @tailwind utilities;
 
 html {
-  /* ScrollStack 整页 Lenis 接管滚动, 原生 scroll-behavior 必须 auto */
-  scroll-behavior: auto;
+  scroll-behavior: smooth;
 }
 
 body {
