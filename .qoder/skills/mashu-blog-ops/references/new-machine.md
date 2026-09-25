@@ -24,14 +24,21 @@ the gates you must clear before another computer (or another agent on it) can op
   3. Verify: `ssh root@120.26.177.214 'echo ok'`.
 - Keep exactly one or two authorized keys; remove old ones when a machine is retired.
 
-## Gate 2 — secrets that are NOT in the repo
-- **Prod admin password**: read it from the server once you have SSH — `grep ADMIN_PASSWORD /etc/blog.env`
-  (Qoder may mask it in output; view it in a console session). Don't rely on `.env-local` — it lives
-  only on the original machine.
-- **Local dev admin**: just set `ADMIN_PASSWORD=blog123456` in your local env; it's throwaway.
-- **Cloudflare**: for day-to-day tunnel ops you don't need local creds (the connector + creds live on
-  the ECS). Only to *recreate* the tunnel do you run `cloudflared tunnel login` on the new machine
-  (interactive Authorize). See cloudflare-tunnel.md.
+## Gate 2 — secrets that are NOT in the repo (plaintext)
+- **Portable encrypted backup**: `ops-secrets/secrets.enc` (AES-256, openssl PBKDF2) is committed to
+  the repo and contains `blog.env` (prod SECRET_KEY/ADMIN_PASSWORD), the Cloudflare tunnel
+  credentials json, `cert.pem`, and the ECS SSH private key. Decrypt it with the passphrase (see
+  `ops-secrets/README.md`) to bootstrap a new machine. **The passphrase is deliberately NOT in the
+  repo** — it lives in the user's password manager (originally `ops-secrets/PASSPHRASE-DO-NOT-COMMIT.txt`,
+  gitignored). No passphrase = bundle unreadable.
+- **Prod admin password / SECRET_KEY**: also live on the server at `/etc/blog.env` — once you have
+  SSH (Gate 1) you can `grep ADMIN_PASSWORD /etc/blog.env` instead of decrypting.
+- **Local dev admin**: just set `ADMIN_PASSWORD=blog123456` locally; throwaway.
+- **Cloudflare**: for day-to-day tunnel ops you don't need local creds (connector + creds live on the
+  ECS). Only to *recreate* the tunnel do you need the creds json (from the bundle) or re-run
+  `cloudflared tunnel login`. See cloudflare-tunnel.md.
+- Keep the GitHub repo **private**; the bundle is only as strong as its passphrase. If either leaks,
+  rotate the admin password + SECRET_KEY, re-login cloudflared, and re-encrypt (README has the cmd).
 
 ## Gate 3 — tooling to reinstall
 - Install: Git, Node 20+, Python 3.10+ (server runs 3.10; local dev used `py -3.13`).
