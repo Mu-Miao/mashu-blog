@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import text
-from sqlmodel import select
+from sqlalchemy import Row, text
+from sqlmodel import func, select
 
 from .. import crud
 from ..db import get_session
@@ -44,6 +44,41 @@ def get_post(slug: str, admin: str | None = Depends(optional_admin)):
         if not p or (p.status != "published" and not admin):
             raise HTTPException(404, "文章不存在")
         return crud.post_to_dict(p, include_body=True)
+
+
+@router.get("/posts/{slug}/adjacent")
+def post_adjacent(slug: str):
+    def key(p: Post):
+        return (p.published_at or p.created_at, p.id)
+
+    with get_session() as s:
+        p = s.exec(select(Post).where(Post.slug == slug, Post.status == "published")).first()
+        if not p:
+            raise HTTPException(404, "文章不存在")
+        pub = s.exec(select(Post).where(Post.status == "published")).all()
+        pub.sort(key=key)
+        idx = pub.index(p)
+        prev = pub[idx - 1] if idx > 0 else None
+        nxt = pub[idx + 1] if idx < len(pub) - 1 else None
+
+        tag_ids = [t.id for t in p.tags]
+        related = []
+        if tag_ids:
+            rows: list[Row] = s.exec(
+                select(Post, func.count(PostTag.tag_id).label("shared"))
+                .join(PostTag, PostTag.post_id == Post.id)
+                .where(PostTag.tag_id.in_(tag_ids), Post.status == "published",
+                       Post.id != p.id)
+                .group_by(Post.id)
+                .order_by(None)
+            ).all()
+            rows.sort(key=lambda r: (r[1], key(r[0])), reverse=True)
+            related = [crud.post_to_dict(r[0]) for r in rows[:3]]
+        return {
+            "prev": crud.post_to_dict(prev) if prev else None,
+            "next": crud.post_to_dict(nxt) if nxt else None,
+            "related": related,
+        }
 
 
 @router.post("/posts")
