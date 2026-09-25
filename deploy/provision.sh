@@ -16,6 +16,9 @@ else
   echo "未知包管理器" >&2; exit 1
 fi
 mkdir -p /opt/blog /var/www/blog /srv/blog
+id -u blogd >/dev/null 2>&1 || useradd -r -s /usr/sbin/nologin blogd
+chown -R blogd:blogd /srv/blog
+chmod 750 /srv/blog
 PYBIN=""
 for c in python3.13 python3.12 python3.11 python3.10 python3; do
   if command -v $c >/dev/null && $c -c "import sys; sys.exit(0 if sys.version_info>=(3,10) else 1)"; then PYBIN=$c; break; fi

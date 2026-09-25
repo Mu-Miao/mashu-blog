@@ -10,7 +10,7 @@ if [ -d web ]; then
 fi
 
 ssh "$BLOG_HOST" "mkdir -p /opt/blog/server /var/www/blog && rm -rf /opt/blog/server/* /var/www/blog/*"
-tar cf - -C server --exclude .venv --exclude .blogdata --exclude __pycache__ --exclude "*.egg-info" . \
+tar cf - -C server --exclude .venv --exclude .blogdata --exclude __pycache__ --exclude "*.egg-info" --exclude "pubtest*.py" --exclude "verify_e2e.py" . \
   | ssh "$BLOG_HOST" "tar xf - -C /opt/blog/server"
 if [ -d web/dist ]; then
   tar cf - -C web/dist . | ssh "$BLOG_HOST" "tar xf - -C /var/www/blog"
@@ -23,4 +23,11 @@ ssh "$BLOG_HOST" "PY=\$(cat /opt/blog/python-bin 2>/dev/null || echo python3)
 /opt/blog/venv/bin/pip install -q -e /opt/blog/server
 systemctl restart blog
 systemctl is-active blog nginx"
+
+# 把服务器最新一份周备份回捞到本机，避免"机器没了备份一起没"
+LATEST=$(ssh "$BLOG_HOST" 'ls -1t /root/blog-backups/*.tgz /root/blog-backups/*.tar.gz 2>/dev/null | head -1' || true)
+if [ -n "$LATEST" ]; then
+  mkdir -p blog-backups
+  scp -q "$BLOG_HOST:$LATEST" blog-backups/ && echo "已回捞备份: blog-backups/$(basename "$LATEST")"
+fi
 echo "部署完成 -> http://${BLOG_HOST#root@}:8080"

@@ -7,7 +7,7 @@ WorkingDirectory=/opt/blog/server
 EnvironmentFile=/etc/blog.env
 ExecStart=/opt/blog/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
 Restart=always
-User=root
+User=blogd
 
 [Install]
 WantedBy=multi-user.target
