@@ -62,8 +62,14 @@ and read `references/new-machine.md` first if you're on a different machine).
 - Performance (hero lag, canvas throttle, hover cost) and testing animation correctly → `references/performance.md`
 - Environment gotchas (Qoder masks secrets, `.bat` CRLF/ASCII, GitHub slow from ECS,
   hidden-tab rAF throttling) → `references/gotchas.md`
-- **Operating from a NEW machine / different agent** (repo has no remote, SSH key + secrets +
-  tooling are per-machine) → `references/new-machine.md`
+- **Writing / publishing a post** — sources live in `content/posts/*.md`, but the server's SQLite is
+  the only truth. Markdown renders with `nl2br`, so keep each paragraph on ONE physical line.
+  Publish with `tools/publish_post.py <file>`: it PUTs when the slug already exists (`/import` would
+  silently create `slug-2`). Never write to production without the user asking. Note `tools/` is
+  gitignored — the script is tracked via `git add -f`.
+- **Operating from a NEW machine / different agent** (clone the private GitHub remote
+  `origin = https://github.com/Mu-Miao/mashu-blog.git`; SSH key + secrets + tooling are per-machine)
+  → `references/new-machine.md`
 
 ## The one-command cheatsheet (most common)
 
