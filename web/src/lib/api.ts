@@ -1,11 +1,40 @@
 export interface Tag { name: string; count: number }
 export interface PostSummary {
   id: number; slug: string; title: string; kind: string; summary: string;
-  status?: string; published_at: string | null; created_at: string; tags: string[];
+  status?: string; published_at: string | null; created_at: string; updated_at: string; tags: string[];
 }
 export interface PostDetail extends PostSummary { body: string; rendered: string }
 export interface Paged<T> { items: T[]; total: number; page: number; page_size: number }
 export interface Adjacent { prev: PostSummary | null; next: PostSummary | null; related: PostSummary[] }
+export interface Tool {
+  id: number;
+  name: string;
+  description: string;
+  download_url: string;
+  version: string;
+  platform: string;
+  access_code: string;
+  status: "draft" | "published";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CommentItem {
+  id: number;
+  parent_id: number | null;
+  author_name: string;
+  content: string;
+  is_admin: boolean;
+  created_at: string;
+  like_count: number;
+  liked: boolean;
+}
+
+export interface AdminComment extends CommentItem {
+  post_slug: string;
+  post_title: string;
+  is_read: boolean;
+}
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, { credentials: "same-origin", ...init });

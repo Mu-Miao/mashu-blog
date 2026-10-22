@@ -18,6 +18,8 @@ import sys
 import httpx
 
 BASE = "https://blog.mashutaba.best/api/v1"
+SITE = "https://blog.mashutaba.best"
+INDEXNOW_KEY = "cc8fae1b74479aceb9ac40d75c606cdb"
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
@@ -57,6 +59,25 @@ def report(mode: str, d: dict) -> None:
     print("  摘要:", (d.get("summary") or "")[:60])
 
 
+def notify_indexnow(client: httpx.Client, slug: str) -> None:
+    url = f"{SITE}/post/{slug}"
+    try:
+        response = client.get(
+            "https://api.indexnow.org/indexnow",
+            params={
+                "url": url,
+                "key": INDEXNOW_KEY,
+                "keyLocation": f"{SITE}/{INDEXNOW_KEY}.txt",
+            },
+        )
+        if response.status_code in {200, 202}:
+            print("  IndexNow: 已通知搜索引擎", url)
+        else:
+            print(f"  IndexNow: 通知失败 HTTP {response.status_code}（文章已正常发布）")
+    except httpx.HTTPError as exc:
+        print(f"  IndexNow: 通知失败 {type(exc).__name__}（文章已正常发布）")
+
+
 def main(md_path: pathlib.Path) -> None:
     meta, body = parse_frontmatter(md_path.read_text(encoding="utf-8"))
     slug = meta.get("slug") or md_path.stem
@@ -93,7 +114,10 @@ def main(md_path: pathlib.Path) -> None:
             mode = "已新建文章"
         if res.status_code != 200:
             sys.exit(f"写入失败 HTTP {res.status_code}: {res.text[:200]}")
-        report(mode, res.json())
+        saved = res.json()
+        report(mode, saved)
+        if saved.get("status") == "published" and saved.get("slug"):
+            notify_indexnow(c, saved["slug"])
 
 
 if __name__ == "__main__":

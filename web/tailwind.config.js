@@ -31,8 +31,8 @@ export default {
         },
         line: "#e8e8ed",
         accent: {
-          DEFAULT: "#0071e3", // Apple Blue(按钮)
-          link: "#06c", // Apple 链接蓝
+          DEFAULT: "#db2777", // 品牌粉：按钮与输入框聚焦
+          link: "#db2777", // 链接沿用品牌粉
         },
       },
       borderRadius: {

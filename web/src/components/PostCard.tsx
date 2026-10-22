@@ -27,7 +27,7 @@ export default function PostCard({ post }: { post: PostSummary }) {
             <Link
               key={t}
               to={`/tag/${encodeURIComponent(t)}`}
-              className="pill bg-canvas-dim text-ink-soft hover:bg-accent/10 hover:text-accent-link dark:bg-white/10 dark:text-white/55 dark:hover:bg-accent/20 dark:hover:text-sky-400"
+              className="pill bg-canvas-dim text-ink-soft hover:bg-accent/10 hover:text-accent-link dark:bg-white/10 dark:text-white/55 dark:hover:bg-accent/20 dark:hover:text-pink-400"
             >
               #{t}
             </Link>

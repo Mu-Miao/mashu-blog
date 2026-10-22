@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, type Paged, type PostSummary } from "../lib/api";
+import AnimatedContent from "./AnimatedContent";
+import ClickSpark from "./ClickSpark";
 import PostCard from "./PostCard";
 
 export default function PostListPage({ query, empty }: { query: (page: number) => string; empty?: string }) {
@@ -26,21 +28,27 @@ export default function PostListPage({ query, empty }: { query: (page: number) =
         </p>
       )}
       <div className="space-y-5">
-        {data.items.map((p) => (
-          <PostCard key={p.id} post={p} />
+        {data.items.map((p, index) => (
+          <AnimatedContent key={`${page}-${p.id}`} delay={index * 50}>
+            <PostCard post={p} />
+          </AnimatedContent>
         ))}
       </div>
       {pages > 1 && (
         <div className="mt-8 flex items-center justify-center gap-3 text-sm">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="btn-ghost">
-            上一页
-          </button>
+          <ClickSpark>
+            <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="btn-ghost">
+              上一页
+            </button>
+          </ClickSpark>
           <span className="px-2 text-ink-faint">
             {page} / {pages}
           </span>
-          <button disabled={page >= pages} onClick={() => setPage(page + 1)} className="btn-ghost">
-            下一页
-          </button>
+          <ClickSpark>
+            <button disabled={page >= pages} onClick={() => setPage(page + 1)} className="btn-ghost">
+              下一页
+            </button>
+          </ClickSpark>
         </div>
       )}
     </div>

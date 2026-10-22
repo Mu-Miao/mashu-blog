@@ -100,7 +100,7 @@
 }
 
 .glass-surface:focus-visible {
-  outline: 2px solid light-dark(#007aff, #0a84ff);
+  outline: 2px solid light-dark(#db2777, #f472b6);
   outline-offset: 2px;
 }
 
@@ -117,4 +117,12 @@
 .dark .glass-surface--fallback {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-surface.mobile-menu-glass {
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.dark .glass-surface.mobile-menu-glass {
+  background: rgba(10, 10, 12, 0.72);
 }

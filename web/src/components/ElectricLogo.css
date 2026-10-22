@@ -1,0 +1,26 @@
+.electric-logo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.brand-electric-logo {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 44px;
+  height: 44px;
+}
+
+.brand-electric-logo > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.brand-electric-logo > .electric-logo {
+  position: absolute;
+  inset: 0;
+  opacity: 0.65;
+}

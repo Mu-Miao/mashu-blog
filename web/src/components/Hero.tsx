@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import ShapeWaves from "./ShapeWaves";
 import WavesCanvas from "./WavesCanvas";
+import ClickSpark from "./ClickSpark";
+import TechText from "./TechText";
 import { useTheme } from "../lib/theme";
 
 const PALETTE = {
@@ -55,6 +57,18 @@ export default function Hero() {
   const [gpuFailed, setGpuFailed] = useState(false);
   const p = PALETTE[theme];
   const useGpu = hasWebGPU && !gpuFailed;
+  const titleEffect = {
+    fontWeight: 600,
+    letterSpacing: -0.025,
+    color: theme === "dark" ? "#ffffff" : "#1d1d1f",
+    accentColor: theme === "dark" ? "#f472b6" : "#db2777",
+    reveal: "letter" as const,
+    dashLength: 4,
+    dashGap: 2,
+    strokeWidth: 1,
+    specks: 8,
+    speed: 0.7,
+  };
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const waveRef = useRef<HTMLDivElement>(null);
@@ -121,17 +135,26 @@ export default function Hero() {
       >
         <p className={`animate-fade-up text-xs font-medium uppercase tracking-[0.3em] ${p.sub}`}>MASHUTABA · 博客</p>
         <h1
-          className={`animate-fade-up text-[40px] font-semibold leading-[1.08] tracking-tight transition-colors duration-500 sm:text-6xl ${p.headline} ${p.shadow}`}
+          className={`pointer-events-auto w-full max-w-5xl animate-fade-up text-[40px] font-semibold leading-[1.08] tracking-tight transition-colors duration-500 sm:text-6xl ${p.headline} ${p.shadow}`}
         >
-          记录，是为了不遗忘
+          <span className="sr-only">把复杂的事，慢慢想明白</span>
+          <span aria-hidden="true" className="hidden h-[104px] sm:block">
+            <TechText {...titleEffect} text="把复杂的事，慢慢想明白" fontSize={60} />
+          </span>
+          <span aria-hidden="true" className="block sm:hidden">
+            <span className="block h-16"><TechText {...titleEffect} text="把复杂的事，" fontSize={40} /></span>
+            <span className="block h-16"><TechText {...titleEffect} text="慢慢想明白" fontSize={40} /></span>
+          </span>
         </h1>
         <p className={`animate-fade-up max-w-md text-sm leading-7 transition-colors duration-500 [animation-delay:150ms] sm:text-base ${p.sub}`}>
-          一个关于嵌入式、写作与生活的个人博客
+          写代码，也写那些无法被编译的部分
         </p>
         <div className="pointer-events-auto mt-3 flex animate-fade-up items-center gap-3 [animation-delay:300ms]">
-          <Link to="/archive" className={`btn-primary !px-6 !py-2.5 transition-colors duration-500 ${p.cta}`}>
-            浏览全部文章
-          </Link>
+          <ClickSpark>
+            <Link to="/archive" className={`btn-primary !px-6 !py-2.5 transition-colors duration-500 ${p.cta}`}>
+              浏览全部文章
+            </Link>
+          </ClickSpark>
         </div>
       </div>
 

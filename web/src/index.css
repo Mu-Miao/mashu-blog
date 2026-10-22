@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Match the light-mode pink used by the blog's “ta” wordmark (pink-500). */
+  --brand-pink-rgb: 236, 72, 153;
+  --magic-bento-glow-rgb: var(--brand-pink-rgb);
+}
+
+.dark {
+  /* Match the dark-mode wordmark (pink-400). */
+  --brand-pink-rgb: 244, 114, 182;
+  --magic-bento-glow-rgb: var(--brand-pink-rgb);
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -18,7 +30,7 @@ body {
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-[#0077ed] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40;
+    @apply inline-flex items-center justify-center bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-pink-700 focus-visible:outline-pink-500 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40;
     border-radius: 980px;
   }
   .btn-ghost {
@@ -36,6 +48,21 @@ body {
     @apply w-full border border-line bg-white px-4 py-2.5 text-sm text-ink outline-none transition placeholder:text-ink-faint focus:border-accent focus:ring-4 focus:ring-accent/10 dark:border-white/15 dark:bg-[#151518] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-accent;
     border-radius: 12px;
   }
+}
+
+/* Replace Chromium's blue native search-clear icon with the brand color. */
+.field::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-left: 8px;
+  cursor: pointer;
+  background-color: #db2777;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m4 4 8 8m0-8-8 8' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.dark .field::-webkit-search-cancel-button {
+  background-color: #f472b6;
 }
 
 /* Apple: 交互反馈挂在 press 上而非 release —— 选中态即时响应 */
@@ -56,6 +83,124 @@ a:active {
   transition: opacity 0.7s cubic-bezier(0.32, 0.72, 0, 1),
     transform 0.7s cubic-bezier(0.32, 0.72, 0, 1);
 }
+
+/* Article lists: one restrained entrance per page of results. */
+.animated-content {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--animated-content-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+.animated-content--visible {
+  opacity: 1;
+  transform: translateY(0);
+  will-change: auto;
+}
+
+/* Short, causal feedback reserved for primary actions. */
+.click-spark {
+  position: relative;
+  display: inline-flex;
+  isolation: isolate;
+}
+
+.click-spark__burst {
+  --spark-radius: 18px;
+  position: absolute;
+  z-index: 10;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.click-spark__ray {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 6px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: rgb(var(--brand-pink-rgb));
+  box-shadow: 0 0 5px rgb(var(--brand-pink-rgb) / 0.45);
+  transform-origin: 0 50%;
+  animation: click-spark-ray 280ms ease-out forwards;
+}
+
+@keyframes click-spark-ray {
+  from {
+    opacity: 1;
+    transform: rotate(var(--spark-angle)) translateX(3px) scaleX(0.45);
+  }
+  to {
+    opacity: 0;
+    transform: rotate(var(--spark-angle)) translateX(var(--spark-radius)) scaleX(1);
+  }
+}
+
+/* A transparent scroll edge behind the floating glass navigation. */
+.gradual-blur {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  height: 84px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease-out;
+}
+
+.gradual-blur--visible {
+  opacity: 1;
+}
+
+.gradual-blur__layer {
+  position: absolute;
+  inset-inline: 0;
+  height: 32%;
+  pointer-events: none;
+  mask-image: linear-gradient(to bottom, transparent, black 35%, black 65%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 35%, black 65%, transparent);
+}
+
+.gradual-blur__layer--1 {
+  top: 0;
+  mask-image: linear-gradient(to bottom, black 0%, black 65%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 65%, transparent 100%);
+}
+.gradual-blur__layer--2 { top: 14%; }
+.gradual-blur__layer--3 { top: 28%; }
+.gradual-blur__layer--4 { top: 42%; }
+.gradual-blur__layer--5 { top: 56%; }
+.gradual-blur__layer--6 {
+  top: 68%;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 35%, black 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 35%, black 100%);
+}
+
+@media (min-width: 640px) {
+  .gradual-blur {
+    height: 96px;
+  }
+}
+
+@media (max-width: 639px) {
+  .animated-content {
+    transform: translateY(6px);
+    transition-duration: 280ms;
+  }
+
+  .animated-content--visible {
+    transform: translateY(0);
+  }
+
+  .click-spark__burst {
+    --spark-radius: 14px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal {
     opacity: 1;
@@ -75,11 +220,25 @@ a:active {
   * {
     transition-duration: 0.01ms !important;
   }
+
+  .animated-content {
+    transform: none;
+    transition-property: opacity;
+    transition-duration: 120ms !important;
+    transition-delay: 0ms;
+  }
+
+  .click-spark__burst {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-transparency: reduce) {
   header.fixed {
     @apply bg-white backdrop-blur-none dark:bg-[#0a0a0c];
   }
-}
 
+  .gradual-blur {
+    display: none;
+  }
+}

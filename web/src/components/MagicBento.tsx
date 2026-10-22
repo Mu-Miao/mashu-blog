@@ -6,7 +6,7 @@ import './MagicBento.css';
 
 const DEFAULT_PARTICLE_COUNT = 12;
 const DEFAULT_SPOTLIGHT_RADIUS = 300;
-const DEFAULT_GLOW_COLOR = '255, 55, 95';
+const DEFAULT_GLOW_COLOR = 'var(--magic-bento-glow-rgb)';
 const MOBILE_BREAKPOINT = 768;
 
 const createParticleElement = (x, y, color = DEFAULT_GLOW_COLOR) => {
@@ -151,7 +151,7 @@ const GlobalSpotlight = ({ gridRef, disableAnimations, enabled, spotlightRadius,
     if (disableAnimations || !gridRef?.current || !enabled) return undefined;
     const spotlight = document.createElement('div');
     spotlight.className = 'global-spotlight';
-    spotlight.style.cssText = `position:fixed;width:800px;height:800px;border-radius:50%;pointer-events:none;background:radial-gradient(circle, rgba(${glowColor},0.15) 0%, rgba(${glowColor},0.08) 15%, rgba(${glowColor},0.04) 25%, rgba(${glowColor},0.02) 40%, rgba(${glowColor},0.01) 65%, transparent 70%);z-index:200;opacity:0;transform:translate(-50%,-50%);mix-blend-mode:screen;`;
+    spotlight.style.cssText = `position:fixed;width:800px;height:800px;border-radius:50%;pointer-events:none;background:radial-gradient(circle, rgba(${glowColor},0.15) 0%, rgba(${glowColor},0.08) 15%, rgba(${glowColor},0.04) 25%, rgba(${glowColor},0.02) 40%, rgba(${glowColor},0.01) 65%, transparent 70%);z-index:200;opacity:0;transform:translate(-50%,-50%);`;
     document.body.appendChild(spotlight);
     spotlightRef.current = spotlight;
     const handleMouseMove = e => {
@@ -229,12 +229,11 @@ const MagicBento = ({ items = [] as any[], textAutoHide = true, enableStars = tr
       <div className="card-grid bento-section" ref={gridRef}>
         {items.map((card, index) => {
           const baseClassName = `magic-bento-card ${textAutoHide ? 'magic-bento-card--text-autohide' : ''} ${enableBorderGlow ? 'magic-bento-card--border-glow' : ''}`;
-          const style = { backgroundColor: card.color || '#120F17', '--glow-color': glowColor };
+          const style = { '--glow-color': glowColor };
           const inner = (
             <Link to={`/post/${card.slug}`} className="magic-bento-card__link">
               <div className="magic-bento-card__header">
                 <div className="magic-bento-card__label">{card.tags?.[0] ? `#${card.tags[0]}` : fmtDate(card.published_at)}</div>
-                {card.published_at && card.tags?.[0] && <div className="magic-bento-card__date">{fmtDate(card.published_at)}</div>}
               </div>
               <div className="magic-bento-card__content">
                 <h2 className="magic-bento-card__title">{card.title}</h2>
