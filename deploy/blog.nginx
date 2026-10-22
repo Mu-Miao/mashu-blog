@@ -1,3 +1,11 @@
+# 只有本机 cloudflared（127.0.0.1/::1）转发时才信任 CF-Connecting-IP；
+# 直连 :8080 的请求一律用真实对端地址，避免客户端伪造 IP 绕过限流。
+map $remote_addr $client_ip {
+    default $remote_addr;
+    127.0.0.1 $http_cf_connecting_ip;
+    ::1       $http_cf_connecting_ip;
+}
+
 server {
     listen 8080;
     root /var/www/blog;
@@ -5,7 +13,9 @@ server {
     client_max_body_size 10m;
 
     gzip on;
-    gzip_types text/css application/javascript image/svg+xml;
+    gzip_vary on;
+    gzip_types text/css application/javascript application/json application/xml
+               application/atom+xml image/svg+xml text/plain;
 
     add_header X-Content-Type-Options nosniff;
     add_header X-Frame-Options SAMEORIGIN;
@@ -17,11 +27,30 @@ server {
     location /api/ {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Real-IP $client_ip;
+        proxy_set_header CF-Connecting-IP $client_ip;
     }
     location /uploads/ {
         proxy_pass http://127.0.0.1:8000;
-        expires 7d;
+        expires 1y;
+    }
+    location = /robots.txt {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+    }
+    location = /sitemap.xml {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+    }
+    location ^~ /post/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $client_ip;
+        proxy_set_header CF-Connecting-IP $client_ip;
+    }
+    location ^~ /assets/ {
+        expires 1y;
+        try_files $uri =404;
     }
     location / {
         try_files $uri /index.html;

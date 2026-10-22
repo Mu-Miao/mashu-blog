@@ -30,8 +30,9 @@ What `deploy/deploy.sh` does:
 2. `ssh` `rm -rf /opt/blog/server/* /var/www/blog/*` (wipes remote app + static).
 3. tar `server/` (excludes `.venv`, `.blogdata`, `__pycache__`, `*.egg-info`) → `/opt/blog/server`.
 4. tar `web/dist` → `/var/www/blog`.
-5. recreate venv, `pip install -e /opt/blog/server`, `systemctl restart blog`, check `is-active`.
-6. auto-pull the newest `/root/blog-backups/*.tgz` back to local `blog-backups/`.
+5. recreate venv, `pip install -e /opt/blog/server`, then restart `blog`.
+6. install `deploy/blog.nginx`, run `nginx -t` with automatic rollback on failure, then reload nginx.
+7. auto-pull the newest `/root/blog-backups/*.tgz` back to local `blog-backups/`.
 
 Data (`/srv/blog/blog.db`, `uploads/`) is **not** touched by deploy — it lives outside `/opt`.
 
@@ -49,6 +50,9 @@ Nginx serves static directly — no restart needed. (Or run the full `deploy.sh`
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" https://blog.mashutaba.best/            # expect 200
 curl -s https://blog.mashutaba.best/api/v1/posts | head -c 120                   # JSON items
+curl -s https://blog.mashutaba.best/robots.txt                                   # plain-text crawler rules
+curl -s https://blog.mashutaba.best/sitemap.xml | head -c 200                    # XML with public URLs
+curl -s https://blog.mashutaba.best/post/<slug> | grep -E 'canonical|ld\+json'   # server-rendered article SEO
 curl -s -D - -o /dev/null https://blog.mashutaba.best/ | grep -i content-security # headers live
 ```
 Then load the homepage in a real browser (Edge/Chrome) and confirm the hero animates.

@@ -25,10 +25,15 @@ cd web && npm i && npm run dev
 export BLOG_HOST=root@120.26.177.214
 bash deploy/provision.sh   # 一次性：装 nginx/systemd/生成 /etc/blog.env（会提示设后台密码）
 bash deploy/deploy.sh      # 日常：构建前端 + rsync + 重启服务
-bash deploy/backup.sh      # 备份 blog.db + uploads 到 backups/
+bash deploy/backup.sh      # 服务器端一致性快照（WAL 安全）并回捞到 backups/
 ```
 
 上线地址：`http://120.26.177.214:8080`，后台 `/admin/login`。
+
+可选环境变量（写在 `/etc/blog.env`，改完 `systemctl restart blog`）：
+
+- `COOKIE_SECURE=1`：入口是 HTTPS 时开启；HTTP 直连保持 0，否则无法登录
+- `ENABLE_DOCS=1`：开放 `/docs` 接口文档（默认关闭）
 
 ## 免服务器模式（cloudflared 隧道，¥0）
 

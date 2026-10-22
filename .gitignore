@@ -15,6 +15,8 @@ blog-backups/
 
 # 临时/调试产物
 .tmp/
+.DS_Store
+.serena/
 
 # 密钥口令文件绝不入库
 ops-secrets/PASSPHRASE*

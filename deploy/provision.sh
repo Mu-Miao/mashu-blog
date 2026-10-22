@@ -8,9 +8,9 @@ ssh "$BLOG_HOST" 'set -e
 if command -v apt-get >/dev/null; then
   export DEBIAN_FRONTEND=noninteractive
   apt-get update -qq
-  apt-get install -y -qq nginx python3-venv openssl dos2unix
+  apt-get install -y -qq nginx python3-venv openssl dos2unix sqlite3
 elif command -v dnf >/dev/null; then
-  dnf -y -q install nginx openssl dos2unix || dnf -y -q install nginx openssl
+  dnf -y -q install nginx openssl dos2unix sqlite || dnf -y -q install nginx openssl sqlite3
   dnf -y -q install python3.11 2>/dev/null || true
 else
   echo "未知包管理器" >&2; exit 1
@@ -29,6 +29,12 @@ echo "provision base ok: $PYBIN"'
 
 scp deploy/blog.service "$BLOG_HOST:/etc/systemd/system/blog.service"
 scp deploy/blog.nginx "$BLOG_HOST:/tmp/blog.nginx"
+scp deploy/blog-backup.sh "$BLOG_HOST:/usr/local/bin/blog-backup.sh"
+ssh "$BLOG_HOST" 'chmod +x /usr/local/bin/blog-backup.sh
+mkdir -p /root/blog-backups
+crontab -l 2>/dev/null | grep -q "/usr/local/bin/blog-backup.sh" || {
+  { crontab -l 2>/dev/null; echo "0 4 * * 0 /usr/local/bin/blog-backup.sh"; } | crontab -
+}'
 ssh "$BLOG_HOST" 'set -e
 if [ -d /etc/nginx/sites-enabled ]; then
   mkdir -p /etc/nginx/sites-available
@@ -59,6 +65,8 @@ SECRET_KEY=$(head -c 64 /dev/urandom | od -An -tx1 | tr -d ' \n')
 BLOG_DIR=/srv/blog
 ADMIN_USER=admin
 ADMIN_PASSWORD=$ADMIN_PASSWORD
+# 入口切到 HTTPS 后改为 1，否则 HTTP 下登录 Cookie 不会下发
+COOKIE_SECURE=0
 EOF
 fi
 echo "provision 完成。记得在安全组放行 TCP 8080 入方向。"

@@ -59,9 +59,11 @@ BLOG_DIR=/srv/blog
 ## Data & backups
 
 - Data lives in `/srv/blog/` (`blog.db` + `uploads/`), owned `blogd`, mode 750. Deploy never touches it.
-- Weekly cron: `0 4 * * 0 /usr/local/bin/blog-backup.sh` → tar `/srv/blog` to
-  **`/root/blog-backups/blog-backup-YYYY-MM-DD.tgz`** (keeps 30 days). `deploy.sh` auto-pulls the
-  newest to local `blog-backups/` after each deploy.
+- Weekly cron: `0 4 * * 0 /usr/local/bin/blog-backup.sh` → **`/root/blog-backups/blog-backup-YYYY-MM-DD.tgz`**
+  (keeps 30 days). `deploy.sh` auto-pulls the newest to local `blog-backups/` after each deploy.
+- The script source is `deploy/blog-backup.sh`, installed by `provision.sh`/`deploy.sh`. It runs
+  `sqlite3 blog.db ".backup <tmp>"` first, then packs the snapshot + `uploads/` — never tar the live
+  DB directly: with WAL, `blog.db` + `blog.db-wal` copied at different instants restore inconsistently.
 - Manual backup now: `ssh root@120.26.177.214 '/usr/local/bin/blog-backup.sh'`
 - List backups: `ssh root@120.26.177.214 'ls -la /root/blog-backups/'`
 - Restore (careful — overwrites live data; back up first):
@@ -74,6 +76,11 @@ BLOG_DIR=/srv/blog
 ## Security posture (already in place — keep, don't regress)
 
 - Backend runs as unprivileged `blogd`; `/srv/blog` 750.
+- Client IP: `deploy/blog.nginx` has a `map $remote_addr $client_ip` that trusts `CF-Connecting-IP`
+  **only from loopback** (cloudflared) and otherwise uses the real peer address. Both `X-Real-IP`
+  and `CF-Connecting-IP` are overwritten with it. Do not revert to `$remote_addr` blindly — under
+  the tunnel every visitor arrives from 127.0.0.1, which would put them all in one rate-limit bucket
+  and make one attacker's failed logins lock out everyone.
 - Nginx sends `Referrer-Policy`, `Permissions-Policy`, and a **CSP in Report-Only** mode. When you
   confirm no violations in the report endpoint, tighten by renaming
   `Content-Security-Policy-Report-Only` → `Content-Security-Policy`. Caveat: `index.html` has an

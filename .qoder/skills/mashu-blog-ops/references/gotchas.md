@@ -38,6 +38,10 @@ These cost real time when rediscovered. Check here first.
   `evaluate_script` DOM probes instead.
 - **Lenis** (smooth scroll) only updates transforms on real `wheel` events; `scrollTop=`/`scrollTo=`
   bypass it. Test scroll-linked effects by dispatching a `WheelEvent`.
+- **`crypto.randomUUID()` needs a secure context.** `Comments.tsx` calls it at module scope, so on
+  `http://<IP>:8080` article pages throw `TypeError: crypto.randomUUID is not a function` and React
+  leaves `#root` empty (white page). Home/archive are fine. Verify article/comment behavior over
+  https://blog.mashutaba.best, or add a fallback UUID if IP access must work.
 
 ## Tailwind / Vite
 
