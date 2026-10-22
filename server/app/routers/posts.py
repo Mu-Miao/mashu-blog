@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import Row, text
+from sqlalchemy import Row, or_, text
+from sqlalchemy.orm import defer
 from sqlmodel import func, select
 
 from .. import crud
@@ -14,25 +15,51 @@ router = APIRouter(tags=["posts"])
 def list_posts(
     page: int = Query(1, ge=1),
     tag: str | None = None,
+    topic: str | None = None,
+    keyword: str | None = Query(None, alias="q", max_length=200),
     all: int = 0,
     size: int = Query(10, ge=1, le=50),
     admin: str | None = Depends(optional_admin),
 ):
     if all and not admin:
         raise HTTPException(401, "需要登录")
+    include_body = bool(all and admin)
+    keyword_value = keyword.strip() if keyword else ""
     with get_session() as s:
-        q = select(Post)
-        if not (all and admin):
-            q = q.where(Post.status == "published")
+        statement = select(Post)
+        count_statement = select(func.count()).select_from(Post)
+        conditions = []
+        if not include_body:
+            conditions.append(Post.status == "published")
         if tag:
-            q = (q.join(PostTag, PostTag.post_id == Post.id)
-                 .join(Tag, Tag.id == PostTag.tag_id).where(Tag.name == tag))
-        matched = s.exec(q).all()
-        total = len(matched)
-        matched.sort(key=lambda p: (p.published_at or p.created_at, p.id), reverse=True)
-        items = matched[(page - 1) * size: page * size]
+            statement = (statement.join(PostTag, PostTag.post_id == Post.id)
+                         .join(Tag, Tag.id == PostTag.tag_id))
+            count_statement = (count_statement.join(PostTag, PostTag.post_id == Post.id)
+                               .join(Tag, Tag.id == PostTag.tag_id))
+            conditions.append(Tag.name == tag)
+        if topic:
+            conditions.append(Post.tags.any(Tag.name == topic))
+        if keyword_value:
+            conditions.append(or_(
+                Post.title.contains(keyword_value, autoescape=True),
+                Post.body.contains(keyword_value, autoescape=True),
+            ))
+        statement = statement.where(*conditions)
+        count_statement = count_statement.where(*conditions)
+        total = int(s.exec(count_statement).one())
+        statement = (
+            statement.order_by(
+                func.coalesce(Post.published_at, Post.created_at).desc(),
+                Post.id.desc(),
+            )
+            .offset((page - 1) * size)
+            .limit(size)
+        )
+        if not include_body:
+            statement = statement.options(defer(Post.body), defer(Post.rendered))
+        items = s.exec(statement).all()
         return {
-            "items": [crud.post_to_dict(p, include_body=bool(all and admin)) for p in items],
+            "items": [crud.post_to_dict(p, include_body=include_body) for p in items],
             "total": total, "page": page, "page_size": size,
         }
 
@@ -147,16 +174,29 @@ def search(q: str = Query(..., min_length=1)):
     if not q:
         return []
     with get_session() as s:
+        fts_ok = False
+        ids: list[int] = []
         if len(q) >= 3:
-            rows = s.execute(
-                text("SELECT post_id FROM posts_fts WHERE posts_fts MATCH :q"),
-                {"q": '"' + q + '"'},
-            ).scalars().all()
-            ids = list(rows)
-            posts = s.exec(select(Post).where(Post.id.in_(ids))).all() if ids else []
-        else:
-            like = f"%{q}%"
+            try:
+                ids = list(s.execute(
+                    text("SELECT post_id FROM posts_fts WHERE posts_fts MATCH :q"),
+                    {"q": '"' + q + '"'},
+                ).scalars().all())
+                fts_ok = True
+            except Exception:
+                fts_ok = False
+        if fts_ok:
+            if not ids:
+                return []
             posts = s.exec(
-                select(Post).where(Post.title.like(like) | Post.body.like(like))
+                select(Post).where(Post.id.in_(ids), Post.status == "published")
             ).all()
-        return [crud.post_to_dict(p) for p in posts if p.status == "published"]
+            return [crud.post_to_dict(p) for p in posts]
+        posts = s.exec(
+            select(Post).where(
+                or_(Post.title.contains(q, autoescape=True),
+                    Post.body.contains(q, autoescape=True)),
+                Post.status == "published",
+            )
+        ).all()
+        return [crud.post_to_dict(p) for p in posts]

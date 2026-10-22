@@ -42,7 +42,28 @@ class Post(SQLModel, table=True):
     published_at: NaiveDatetime | None = None
     created_at: NaiveDatetime = Field(default_factory=now)
     updated_at: NaiveDatetime = Field(default_factory=now)
-    tags: list[Tag] = Relationship(back_populates="posts", link_model=PostTag)
+    tags: list[Tag] = Relationship(
+        back_populates="posts",
+        link_model=PostTag,
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
+
+
+class Comment(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    post_id: int = Field(foreign_key="post.id", index=True)
+    parent_id: int | None = Field(default=None, foreign_key="comment.id", index=True)
+    author_name: str
+    content: str
+    is_admin: bool = False
+    is_read: bool = False
+    created_at: NaiveDatetime = Field(default_factory=now, index=True)
+
+
+class CommentLike(SQLModel, table=True):
+    comment_id: int = Field(foreign_key="comment.id", primary_key=True)
+    visitor_id: str = Field(primary_key=True)
+    created_at: NaiveDatetime = Field(default_factory=now)
 
 
 class Asset(SQLModel, table=True):
@@ -51,6 +72,19 @@ class Asset(SQLModel, table=True):
     mime: str
     size: int
     created_at: NaiveDatetime = Field(default_factory=now)
+
+
+class Tool(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str
+    description: str = ""
+    download_url: str
+    version: str = ""
+    platform: str = ""
+    access_code: str = ""
+    status: str = "draft"
+    created_at: NaiveDatetime = Field(default_factory=now)
+    updated_at: NaiveDatetime = Field(default_factory=now)
 
 
 class ApiKey(SQLModel, table=True):

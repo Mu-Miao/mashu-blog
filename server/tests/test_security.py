@@ -1,6 +1,6 @@
 from app.security import (
     create_token, decode_token, hash_api_key, hash_password, new_api_key,
-    parse_frontmatter, render_markdown, sanitize_html, slugify, verify_password,
+    parse_frontmatter, render_html, render_markdown, sanitize_html, slugify, verify_password,
 )
 
 
@@ -30,6 +30,12 @@ def test_render_markdown():
     assert "<h1" in out
     assert "<table" in out
     assert "highlight" in out
+
+
+def test_html_article_renders_legacy_uploaded_image():
+    out = render_html('![自拍](/uploads/2e0ee55b8f8d5f93.jpg)')
+    assert '<img src="/uploads/2e0ee55b8f8d5f93.jpg" alt="自拍">' in out
+    assert "<script" not in render_html('<script>alert(1)</script>')
 
 
 def test_slugify():

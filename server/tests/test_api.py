@@ -30,6 +30,64 @@ def test_login_and_me(client):
     assert r.status_code == 200 and r.json()["username"] == "admin"
 
 
+def test_comments_replies_likes_and_unread_notification(client):
+    login = client.post("/api/v1/auth/login", json={"username": "admin", "password": "testpass123"})
+    assert login.status_code == 200
+    post = client.post("/api/v1/posts", json={
+        "title": "Comments Post", "kind": "md", "body": "hello", "status": "published",
+    }).json()
+    slug = post["slug"]
+    client.cookies.clear()
+
+    created = client.post(f"/api/v1/posts/{slug}/comments", json={
+        "author_name": "  小 明  ", "content": "这篇文章很有帮助！",
+    })
+    assert created.status_code == 201
+    comment = created.json()
+    assert comment["author_name"] == "小 明"
+    assert client.get("/api/v1/admin/comments/unread-count").status_code == 401
+
+    visitor_id = "visitor_1234567890abcdef"
+    liked = client.post(f"/api/v1/comments/{comment['id']}/like", json={"visitor_id": visitor_id})
+    assert liked.json() == {"liked": True, "count": 1}
+    public = client.get(f"/api/v1/posts/{slug}/comments?visitor_id={visitor_id}").json()
+    assert public[0]["liked"] is True and public[0]["like_count"] == 1
+    unliked = client.post(f"/api/v1/comments/{comment['id']}/like", json={"visitor_id": visitor_id})
+    assert unliked.json() == {"liked": False, "count": 0}
+
+    client.post("/api/v1/auth/login", json={"username": "admin", "password": "testpass123"})
+    assert client.get("/api/v1/admin/comments/unread-count").json()["count"] == 1
+    reply = client.post(f"/api/v1/admin/comments/{comment['id']}/reply", json={"content": "谢谢你的反馈！"})
+    assert reply.status_code == 201 and reply.json()["is_admin"] is True
+    assert reply.json()["parent_id"] == comment["id"]
+    assert client.get("/api/v1/admin/comments/unread-count").json()["count"] == 0
+
+    threaded = client.get(f"/api/v1/posts/{slug}/comments").json()
+    assert len(threaded) == 2
+    assert threaded[1]["parent_id"] == comment["id"]
+
+
+def test_comment_validation_and_parent_scope(client):
+    client.post("/api/v1/auth/login", json={"username": "admin", "password": "testpass123"})
+    first = client.post("/api/v1/posts", json={
+        "title": "First Comments Post", "kind": "md", "body": "one", "status": "published",
+    }).json()
+    second = client.post("/api/v1/posts", json={
+        "title": "Second Comments Post", "kind": "md", "body": "two", "status": "published",
+    }).json()
+    client.cookies.clear()
+    comment = client.post(f"/api/v1/posts/{first['slug']}/comments", json={
+        "author_name": "读者", "content": "第一篇",
+    }).json()
+    cross_post = client.post(f"/api/v1/posts/{second['slug']}/comments", json={
+        "author_name": "读者", "content": "错误回复", "parent_id": comment["id"],
+    })
+    assert cross_post.status_code == 404
+    assert client.post(f"/api/v1/posts/{first['slug']}/comments", json={
+        "author_name": "读者", "content": "空蜜罐", "website": "spam.example",
+    }).status_code == 422
+
+
 def test_write_requires_auth(client):
     login(client)
     client.post("/api/v1/auth/logout")
@@ -146,11 +204,87 @@ def test_upload_and_keys(client):
     assert r.status_code == 401
 
 
+def test_asset_delete_preserves_images_used_by_articles(client):
+    import io
+
+    png = bytes.fromhex("89504e470d0a1a0a") + b"\0" * 100
+    assert client.delete("/api/v1/assets/1").status_code == 401
+    login(client)
+    uploaded = client.post("/api/v1/assets", files={
+        "file": ("photo.png", io.BytesIO(png), "image/png")
+    }).json()
+    image_url = uploaded["url"]
+    article = client.post("/api/v1/posts", json={
+        "title": "HTML image", "kind": "html", "body": f"![photo]({image_url})",
+        "status": "published",
+    })
+    assert f'<img src="{image_url}"' in article.json()["rendered"]
+    from sqlmodel import Session
+    from app.db import engine
+    from app.models import Post
+    with Session(engine) as session:
+        saved = session.get(Post, article.json()["id"])
+        saved.rendered = saved.body  # simulate an article saved before the compatibility fix
+        session.add(saved)
+        session.commit()
+    slug = article.json()["slug"]
+    assert f'<img src="{image_url}"' in client.get(f"/api/v1/posts/{slug}").json()["rendered"]
+    assert f'<img src="{image_url}"' in client.get(f"/post/{slug}").text
+    assert client.delete(f"/api/v1/assets/{uploaded['id']}").status_code == 409
+    assert client.get(image_url).status_code == 200
+
+    client.put(f"/api/v1/posts/{article.json()['id']}", json={"body": "<p>No image</p>"})
+    assert client.delete(f"/api/v1/assets/{uploaded['id']}").status_code == 204
+    assert client.get(image_url).status_code == 404
+    assert all(asset["id"] != uploaded["id"] for asset in client.get("/api/v1/assets").json())
+    assert client.delete(f"/api/v1/assets/{uploaded['id']}").status_code == 404
+
+
 def test_import_requires_auth(client):
     import io
     r = client.post("/api/v1/import",
                     files={"file": ("p.md", io.BytesIO(b"x"), "text/markdown")})
     assert r.status_code == 401
+
+
+def test_tools_crud_and_public_visibility(client):
+    payload = {
+        "name": "串口助手",
+        "description": "调试串口设备",
+        "download_url": "https://example.com/tool.zip",
+        "version": "1.2.0",
+        "platform": "Windows",
+        "access_code": "mashu",
+        "status": "draft",
+    }
+    assert client.post("/api/v1/tools", json=payload).status_code == 401
+    login(client)
+    created = client.post("/api/v1/tools", json=payload)
+    assert created.status_code == 200, created.text
+    tool = created.json()
+    assert tool["name"] == "串口助手" and tool["access_code"] == "mashu"
+    assert client.get("/api/v1/tools").json() == []
+    assert len(client.get("/api/v1/tools?all=1").json()) == 1
+
+    updated = client.put(f"/api/v1/tools/{tool['id']}", json={"status": "published"})
+    assert updated.status_code == 200 and updated.json()["status"] == "published"
+    client.cookies.clear()
+    public = client.get("/api/v1/tools").json()
+    assert len(public) == 1 and public[0]["download_url"] == payload["download_url"]
+    assert client.get("/api/v1/tools?all=1").status_code == 401
+
+    login(client)
+    assert client.delete(f"/api/v1/tools/{tool['id']}").status_code == 204
+    assert client.get("/api/v1/tools?all=1").json() == []
+
+
+def test_tools_reject_invalid_download_url(client):
+    login(client)
+    response = client.post("/api/v1/tools", json={
+        "name": "不安全链接",
+        "download_url": "javascript:alert(1)",
+    })
+    assert response.status_code == 400
 
 
 def test_rss(client):
@@ -159,6 +293,59 @@ def test_rss(client):
                                        "body": "b", "status": "published"})
     xml = client.get("/api/v1/feed.xml").text
     assert "<title>Feed Post</title>" in xml
+
+
+def test_robots_and_sitemap_only_publish_public_urls(client):
+    login(client)
+    published = client.post("/api/v1/posts", json={
+        "title": "SEO Public", "kind": "md", "body": "public body",
+        "tags": ["搜索 优化"], "status": "published",
+    }).json()
+    draft = client.post("/api/v1/posts", json={
+        "title": "SEO Draft", "kind": "md", "body": "draft body",
+        "status": "draft",
+    }).json()
+
+    robots = client.get("/robots.txt")
+    assert robots.status_code == 200
+    assert robots.headers["content-type"].startswith("text/plain")
+    assert robots.headers["cache-control"].startswith("no-cache")
+    assert robots.headers["cloudflare-cdn-cache-control"] == "no-store"
+    assert "Disallow: /admin/" in robots.text
+    assert "Sitemap: https://example.test/sitemap.xml" in robots.text
+
+    sitemap = client.get("/sitemap.xml")
+    assert sitemap.status_code == 200
+    assert sitemap.headers["content-type"].startswith("application/xml")
+    assert f"https://example.test/post/{published['slug']}" in sitemap.text
+    assert draft["slug"] not in sitemap.text
+    assert "https://example.test/tag/%E6%90%9C%E7%B4%A2%20%E4%BC%98%E5%8C%96" in sitemap.text
+
+
+def test_article_html_has_server_rendered_seo_and_real_404(client):
+    login(client)
+    published = client.post("/api/v1/posts", json={
+        "title": "SEO <文章>", "kind": "md", "body": "## 能被抓取的正文",
+        "tags": ["SEO"], "status": "published",
+    }).json()
+    draft = client.post("/api/v1/posts", json={
+        "title": "Hidden Draft", "kind": "md", "body": "secret",
+        "status": "draft",
+    }).json()
+    client.cookies.clear()
+
+    page = client.get(f"/post/{published['slug']}")
+    assert page.status_code == 200
+    assert page.headers["content-type"].startswith("text/html")
+    assert "SEO &lt;文章&gt; · 麻薯ta爸" in page.text
+    assert f'https://example.test/post/{published["slug"]}' in page.text
+    assert 'type="application/ld+json"' in page.text
+    assert "能被抓取的正文" in page.text
+    assert page.headers["x-robots-tag"].startswith("index, follow")
+
+    missing = client.get(f"/post/{draft['slug']}")
+    assert missing.status_code == 404
+    assert 'content="noindex, nofollow"' in missing.text
 
 
 def test_login_rate_limit(client):

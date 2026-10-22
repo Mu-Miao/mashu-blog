@@ -1,9 +1,9 @@
+from sqlalchemy import delete, text
 from sqlmodel import Session, select
-from sqlalchemy import text
 
 from . import security
-from .db import sync_fts
-from .models import now, Post, PostTag, Tag
+from .db import remove_post_fts, sync_post_fts
+from .models import Comment, CommentLike, now, Post, PostTag, Tag
 
 
 def get_or_create_tags(session: Session, names: list[str]) -> list[Tag]:
@@ -41,19 +41,16 @@ def create_post(
     status: str = "draft",
     slug: str | None = None,
 ) -> Post:
+    rendered = (
+        security.render_markdown(body) if kind == "md" else security.render_html(body)
+    )
     post = Post(
         slug=unique_slug(session, slug or title),
         title=title,
         kind=kind,
         body=body,
-        rendered=(
-            security.render_markdown(body)
-            if kind == "md"
-            else security.sanitize_html(body)
-        ),
-        summary=security.make_summary(
-            security.render_markdown(body) if kind == "md" else security.sanitize_html(body)
-        ),
+        rendered=rendered,
+        summary=security.make_summary(rendered),
         status=status,
         published_at=now() if status == "published" else None,
     )
@@ -64,7 +61,7 @@ def create_post(
         session.add(PostTag(post_id=post.id, tag_id=tag.id))
     session.commit()
     session.refresh(post)
-    sync_fts(session)
+    sync_post_fts(session, post.id, post.title, post.body)
     return post
 
 
@@ -79,7 +76,7 @@ def update_post(session: Session, post: Post, data: dict) -> Post:
         post.rendered = (
             security.render_markdown(post.body)
             if post.kind == "md"
-            else security.sanitize_html(post.body)
+            else security.render_html(post.body)
         )
         post.summary = security.make_summary(post.rendered)
     if post.status == "published" and not post.published_at:
@@ -95,15 +92,28 @@ def update_post(session: Session, post: Post, data: dict) -> Post:
             session.add(PostTag(post_id=post.id, tag_id=tag.id))
         session.commit()
     session.refresh(post)
-    sync_fts(session)
+    sync_post_fts(session, post.id, post.title, post.body)
     return post
 
 
 def delete_post(session: Session, post: Post) -> None:
-    session.execute(text("DELETE FROM posttag WHERE post_id = :p"), {"p": post.id})
+    post_id = post.id
+    comment_ids = session.exec(
+        select(Comment.id).where(Comment.post_id == post_id)
+    ).all()
+    if comment_ids:
+        session.execute(
+            delete(CommentLike).where(CommentLike.comment_id.in_(comment_ids))
+        )
+    session.execute(delete(Comment).where(Comment.post_id == post_id))
     session.delete(post)
     session.commit()
-    sync_fts(session)
+    remove_post_fts(session, post_id)
+
+
+def rendered_for_post(post: Post) -> str:
+    # Older HTML posts may contain uploaded-image Markdown in the stored body.
+    return security.render_html(post.body) if post.kind == "html" else post.rendered
 
 
 def post_to_dict(post: Post, include_body: bool = False) -> dict:
@@ -116,9 +126,10 @@ def post_to_dict(post: Post, include_body: bool = False) -> dict:
         "status": post.status,
         "published_at": post.published_at,
         "created_at": post.created_at,
+        "updated_at": post.updated_at,
         "tags": [t.name for t in post.tags],
     }
     if include_body:
         data["body"] = post.body
-        data["rendered"] = post.rendered
+        data["rendered"] = rendered_for_post(post)
     return data

@@ -1,4 +1,5 @@
 import secrets
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlmodel import select
@@ -6,7 +7,7 @@ from sqlmodel import select
 from .. import config
 from ..db import get_session
 from ..deps import require_admin
-from ..models import Asset
+from ..models import Asset, Post
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 
@@ -53,3 +54,29 @@ def list_assets(user: str = Depends(require_admin)):
         rows = s.exec(select(Asset).order_by(Asset.id.desc())).all()
         return [{"id": a.id, "url": f"/uploads/{a.filename}", "size": a.size,
                  "created_at": a.created_at} for a in rows]
+
+
+@router.delete("/{asset_id}", status_code=204)
+def delete_asset(asset_id: int, user: str = Depends(require_admin)):
+    with get_session() as s:
+        asset = s.get(Asset, asset_id)
+        if not asset:
+            raise HTTPException(404, "图片不存在")
+        if any(asset.filename in body for body in s.exec(select(Post.body)).all()):
+            raise HTTPException(409, "图片仍被文章引用，请先从文章中移除")
+        if Path(asset.filename).name != asset.filename:
+            raise HTTPException(500, "图片文件名无效")
+
+        source = config.UPLOADS_DIR / asset.filename
+        hidden = config.UPLOADS_DIR / f".deleting-{secrets.token_hex(8)}"
+        try:
+            if source.exists():
+                source.rename(hidden)
+            s.delete(asset)
+            s.commit()
+        except Exception:
+            s.rollback()
+            if hidden.exists():
+                hidden.rename(source)
+            raise
+        hidden.unlink(missing_ok=True)

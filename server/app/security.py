@@ -1,4 +1,5 @@
 import hashlib
+import html
 import re
 import secrets
 import unicodedata
@@ -63,6 +64,21 @@ def sanitize_html(raw: str) -> str:
         link_rel="noopener noreferrer",
         url_schemes=ALLOWED_PROTOCOLS,
     )
+
+
+_UPLOAD_MARKDOWN_IMAGE_RE = re.compile(r"!\[([^\]\n]*)\]\((/uploads/[A-Za-z0-9._-]+)\)")
+
+
+def render_html(raw: str) -> str:
+    """Accept image links inserted as Markdown into older HTML articles."""
+    normalized = _UPLOAD_MARKDOWN_IMAGE_RE.sub(
+        lambda match: (
+            f'<figure><img src="{match.group(2)}" '
+            f'alt="{html.escape(match.group(1), quote=True)}"></figure>'
+        ),
+        raw,
+    )
+    return sanitize_html(normalized)
 
 
 def render_markdown(md_text: str) -> str:

@@ -11,6 +11,7 @@ os.environ["DATABASE_URL"] = "sqlite:///" + os.path.join(TMP, "blog.db").replace
 os.environ["SECRET_KEY"] = "test-secret"
 os.environ["ADMIN_USER"] = "admin"
 os.environ["ADMIN_PASSWORD"] = "testpass123"
+os.environ["SITE_URL"] = "https://example.test"
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 

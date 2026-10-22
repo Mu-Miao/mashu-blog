@@ -3,6 +3,7 @@ import time
 from fastapi import APIRouter, Depends, Request, Response
 from sqlmodel import select
 
+from .. import config
 from ..db import get_session
 from ..deps import require_admin
 from ..models import User
@@ -13,7 +14,16 @@ _attempts: dict[str, list[float]] = {}
 LOCK_AFTER, LOCK_SECONDS = 5, 600
 
 
+def _prune_attempts() -> None:
+    if len(_attempts) < 512:
+        return
+    now = time.monotonic()
+    for key in [k for k, v in _attempts.items() if not v or now - v[-1] >= LOCK_SECONDS]:
+        _attempts.pop(key, None)
+
+
 def _locked(ip: str) -> bool:
+    _prune_attempts()
     t = time.monotonic()
     fails = [x for x in _attempts.get(ip, []) if t - x < LOCK_SECONDS]
     _attempts[ip] = fails
@@ -35,7 +45,8 @@ def login(body: dict, request: Request, response: Response):
     _attempts.pop(ip, None)
     response.set_cookie(
         "blog_session", create_token("admin"),
-        httponly=True, samesite="lax", max_age=7 * 86400, path="/",
+        httponly=True, samesite="lax", secure=config.COOKIE_SECURE,
+        max_age=7 * 86400, path="/",
     )
     return {"ok": True}
 

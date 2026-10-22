@@ -1,14 +1,14 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 
 from . import config
 from .db import get_session, init_db
 from .models import User
-from .routers import assets, auth, feed, import_, keys, posts
+from .routers import assets, auth, comments, feed, import_, keys, posts, seo, tools
 from .security import hash_password
 
 
@@ -27,14 +27,33 @@ def create_app() -> FastAPI:
         _ensure_admin()
         yield
 
-    app = FastAPI(title="mashu-blog", lifespan=lifespan)
+    app = FastAPI(
+        title="mashu-blog",
+        lifespan=lifespan,
+        docs_url="/docs" if config.ENABLE_DOCS else None,
+        redoc_url="/redoc" if config.ENABLE_DOCS else None,
+        openapi_url="/openapi.json" if config.ENABLE_DOCS else None,
+    )
+
+    @app.middleware("http")
+    async def immutable_static_cache(request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith(("/assets/", "/uploads/")):
+            response.headers.setdefault(
+                "Cache-Control", "public, max-age=31536000, immutable"
+            )
+        return response
+
     api = "/api/v1"
     app.include_router(auth.router, prefix=api)
     app.include_router(posts.router, prefix=api)
+    app.include_router(comments.router, prefix=api)
     app.include_router(assets.router, prefix=api)
     app.include_router(keys.router, prefix=api)
     app.include_router(import_.router, prefix=api)
     app.include_router(feed.router, prefix=api)
+    app.include_router(tools.router, prefix=api)
+    app.include_router(seo.router)
     app.mount("/uploads", StaticFiles(directory=config.UPLOADS_DIR), name="uploads")
 
     dist = config.STATIC_DIR
@@ -43,6 +62,8 @@ def create_app() -> FastAPI:
 
         @app.get("/{path:path}", include_in_schema=False)
         def spa(path: str):
+            if path.startswith("api/") or path in {"docs", "redoc", "openapi.json"}:
+                return JSONResponse({"detail": "Not Found"}, status_code=404)
             file = (dist / path).resolve()
             if path and file.is_file() and file.is_relative_to(dist.resolve()):
                 return FileResponse(file)
