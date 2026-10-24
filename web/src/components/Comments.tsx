@@ -4,17 +4,10 @@ import { zhCN } from "date-fns/locale";
 
 import { api, type CommentItem } from "../lib/api";
 import PulseHeart from "./PulseHeart";
+import { visitorId } from "../lib/commentVisitor";
+import { readStorage, writeStorage } from "../lib/storage";
 
-const VISITOR_KEY = "mashu-blog-comment-visitor";
 const AUTHOR_KEY = "mashu-blog-comment-author";
-
-function visitorId() {
-  const saved = localStorage.getItem(VISITOR_KEY);
-  if (saved) return saved;
-  const created = crypto.randomUUID().replaceAll("-", "");
-  localStorage.setItem(VISITOR_KEY, created);
-  return created;
-}
 
 interface CommentCardProps {
   comment: CommentItem;
@@ -30,18 +23,20 @@ function CommentCard({ comment, depth, childrenByParent, visitor, onReply, onLik
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState(false);
   const [likeBusy, setLikeBusy] = useState(false);
+  const [error, setError] = useState("");
   const replies = childrenByParent.get(comment.id) ?? [];
 
   async function submitReply(event: FormEvent) {
     event.preventDefault();
     if (!reply.trim()) return;
     setBusy(true);
+    setError("");
     try {
       await onReply(comment.id, reply);
       setReply("");
       setReplying(false);
     } catch {
-      // The parent surface presents the actionable error message.
+      setError("回复发送失败，请稍后再试。");
     } finally {
       setBusy(false);
     }
@@ -71,8 +66,11 @@ function CommentCard({ comment, depth, childrenByParent, visitor, onReply, onLik
             onChange={async () => {
               setLikeBusy(true);
               try {
+                setError("");
                 const result = await api.post<{ liked: boolean; count: number }>(`/comments/${comment.id}/like`, { visitor_id: visitor });
                 onLike(comment.id, result.liked, result.count);
+              } catch {
+                setError("点赞失败，请稍后再试。");
               } finally {
                 setLikeBusy(false);
               }
@@ -88,6 +86,7 @@ function CommentCard({ comment, depth, childrenByParent, visitor, onReply, onLik
             <button className="btn-primary shrink-0 !px-4 !py-2 text-sm" disabled={busy || !reply.trim()}>{busy ? "发送中" : "发送"}</button>
           </form>
         ) : null}
+        {error ? <p role="alert" className="mt-3 text-sm text-red-500">{error}</p> : null}
       </article>
       {replies.map((child) => (
         <CommentCard key={child.id} comment={child} depth={Math.min(depth + 1, 3)} childrenByParent={childrenByParent} visitor={visitor} onReply={onReply} onLike={onLike} />
@@ -97,20 +96,29 @@ function CommentCard({ comment, depth, childrenByParent, visitor, onReply, onLik
 }
 
 export default function Comments({ slug }: { slug: string }) {
+  return <PostComments key={slug} slug={slug} />;
+}
+
+function PostComments({ slug }: { slug: string }) {
   const [visitor] = useState(visitorId);
   const [comments, setComments] = useState<CommentItem[]>([]);
-  const [author, setAuthor] = useState(() => localStorage.getItem(AUTHOR_KEY) ?? "");
+  const [author, setAuthor] = useState(() => readStorage(AUTHOR_KEY) ?? "");
   const [content, setContent] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    setLoading(true);
-    api.get<CommentItem[]>(`/posts/${encodeURIComponent(slug)}/comments?visitor_id=${encodeURIComponent(visitor)}`)
+    const controller = new AbortController();
+    api.get<CommentItem[]>(`/posts/${encodeURIComponent(slug)}/comments?visitor_id=${encodeURIComponent(visitor)}`, { signal: controller.signal })
       .then(setComments)
-      .catch(() => setError("评论暂时加载失败，请稍后再试。"))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (!controller.signal.aborted) setError("评论暂时加载失败，请稍后再试。");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
   }, [slug, visitor]);
 
   const childrenByParent = useMemo(() => {
@@ -130,7 +138,7 @@ export default function Comments({ slug }: { slug: string }) {
     const created = await api.post<CommentItem>(`/posts/${encodeURIComponent(slug)}/comments`, {
       author_name: author.trim(), content: text.trim(), parent_id: parentId, website: "",
     });
-    localStorage.setItem(AUTHOR_KEY, author.trim());
+    writeStorage(AUTHOR_KEY, author.trim());
     setComments((current) => [...current, created]);
   }
 
@@ -170,7 +178,7 @@ export default function Comments({ slug }: { slug: string }) {
         </div>
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-xs text-ink-faint dark:text-white/35">支持评论回复，也可以给喜欢的评论点个小爱心。</p>
-          <button className="btn-primary shrink-0" disabled={busy || !author.trim() || !content.trim()}>{busy ? "发送中…" : "发表评论"}</button>
+          <button className="btn-primary shrink-0" disabled={loading || busy || !author.trim() || !content.trim()}>{busy ? "发送中…" : "发表评论"}</button>
         </div>
         {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
       </form>

@@ -1,5 +1,5 @@
 import { lazy, Suspense, useSyncExternalStore } from "react";
-import { useTheme } from "../lib/theme";
+import { useTheme } from "../lib/themeContext";
 import brandLogo from "../assets/brand/strict-father-logo-v1.png";
 import "./ElectricLogo.css";
 

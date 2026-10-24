@@ -45,7 +45,7 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  get: <T>(p: string) => req<T>(`/api/v1${p}`),
+  get: <T>(p: string, init?: RequestInit) => req<T>(`/api/v1${p}`, init),
   post: <T>(p: string, body?: unknown) =>
     req<T>(`/api/v1${p}`, body === undefined
       ? { method: "POST" }

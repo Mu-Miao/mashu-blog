@@ -185,7 +185,7 @@ const GlobalSpotlight = ({ gridRef, disableAnimations, enabled, spotlightRadius,
     };
     const handleMouseLeave = () => {
       gridRef.current?.querySelectorAll('.magic-bento-card').forEach(card => card.style.setProperty('--glow-intensity', '0'));
-      spotlightRef.current && gsap.to(spotlightRef.current, { opacity: 0, duration: 0.3 });
+      if (spotlightRef.current) gsap.to(spotlightRef.current, { opacity: 0, duration: 0.3 });
     };
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseleave', handleMouseLeave);
@@ -227,7 +227,7 @@ const MagicBento = ({ items = [] as any[], textAutoHide = true, enableStars = tr
         <GlobalSpotlight gridRef={gridRef} disableAnimations={shouldDisableAnimations} enabled={enableSpotlight} spotlightRadius={spotlightRadius} glowColor={glowColor} />
       )}
       <div className="card-grid bento-section" ref={gridRef}>
-        {items.map((card, index) => {
+        {items.map((card) => {
           const baseClassName = `magic-bento-card ${textAutoHide ? 'magic-bento-card--text-autohide' : ''} ${enableBorderGlow ? 'magic-bento-card--border-glow' : ''}`;
           const style = { '--glow-color': glowColor };
           const inner = (

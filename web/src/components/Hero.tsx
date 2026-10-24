@@ -4,7 +4,7 @@ import ShapeWaves from "./ShapeWaves";
 import WavesCanvas from "./WavesCanvas";
 import ClickSpark from "./ClickSpark";
 import TechText from "./TechText";
-import { useTheme } from "../lib/theme";
+import { useTheme } from "../lib/themeContext";
 
 const PALETTE = {
   dark: {

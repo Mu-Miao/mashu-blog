@@ -1,5 +1,5 @@
 import DOMPurify from "dompurify";
-import { useTheme } from "../lib/theme";
+import { useTheme } from "../lib/themeContext";
 
 export default function Rendered({ html }: { html: string }) {
   const { theme } = useTheme();

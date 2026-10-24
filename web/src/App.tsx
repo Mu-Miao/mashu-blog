@@ -1,11 +1,23 @@
+import { lazy } from "react";
 import { Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
-import { Archive, Home, NotFound, Post, Search, TagPage } from "./pages/Reader";
-import { AdminShell, Assets, Editor, Keys, Login, PostList } from "./pages/Admin";
-import Tools from "./pages/Tools";
-import AdminTools from "./pages/AdminTools";
-import AdminComments from "./pages/AdminComments";
-import Teaching from "./pages/Teaching";
+
+const Home = lazy(() => import("./pages/Reader").then((module) => ({ default: module.Home })));
+const Post = lazy(() => import("./pages/Reader").then((module) => ({ default: module.Post })));
+const Archive = lazy(() => import("./pages/Reader").then((module) => ({ default: module.Archive })));
+const Search = lazy(() => import("./pages/Reader").then((module) => ({ default: module.Search })));
+const TagPage = lazy(() => import("./pages/Reader").then((module) => ({ default: module.TagPage })));
+const NotFound = lazy(() => import("./pages/Reader").then((module) => ({ default: module.NotFound })));
+const AdminShell = lazy(() => import("./pages/Admin").then((module) => ({ default: module.AdminShell })));
+const Assets = lazy(() => import("./pages/Admin").then((module) => ({ default: module.Assets })));
+const Editor = lazy(() => import("./pages/Admin").then((module) => ({ default: module.Editor })));
+const Keys = lazy(() => import("./pages/Admin").then((module) => ({ default: module.Keys })));
+const Login = lazy(() => import("./pages/Admin").then((module) => ({ default: module.Login })));
+const PostList = lazy(() => import("./pages/Admin").then((module) => ({ default: module.PostList })));
+const Tools = lazy(() => import("./pages/Tools"));
+const AdminTools = lazy(() => import("./pages/AdminTools"));
+const AdminComments = lazy(() => import("./pages/AdminComments"));
+const Teaching = lazy(() => import("./pages/Teaching"));
 
 export default function App() {
   return (

@@ -69,7 +69,13 @@ export default function PulseHeart({
 }: PulseHeartProps) {
   const controlled = likedProp !== undefined;
   const [inner, setInner] = useState(defaultLiked);
-  const [total, setTotal] = useState(count);
+  const [localCount, setLocalCount] = useState(count);
+  const [previousCount, setPreviousCount] = useState(count);
+  if (previousCount !== count) {
+    setPreviousCount(count);
+    setLocalCount(count);
+  }
+  const total = controlled ? count : localCount;
   const liked = controlled ? likedProp : inner;
   const [shown, setShown] = useState({ liked, count });
   const [roll, setRoll] = useState<{ a: string; b: string; at: number; up: boolean } | null>(null);
@@ -84,11 +90,12 @@ export default function PulseHeart({
   const viaPointer = useRef(false);
   const shownRef = useRef(shown);
   const logical = useRef({ liked, count: total });
-  logical.current = { liked, count: total };
   const cfg = useRef({ duration, dotSize, overshoot, beat, rollDuration });
-  cfg.current = { duration, dotSize, overshoot, beat, rollDuration };
 
-  useEffect(() => setTotal(count), [count]);
+  useLayoutEffect(() => {
+    logical.current = { liked, count: total };
+    cfg.current = { duration, dotSize, overshoot, beat, rollDuration };
+  }, [liked, total, duration, dotSize, overshoot, beat, rollDuration]);
 
   useEffect(() => {
     if (raf.current) return;
@@ -180,8 +187,10 @@ export default function PulseHeart({
     viaPointer.current = false;
     const nextLiked = !liked;
     const nextCount = Math.max(0, total + (nextLiked ? 1 : -1));
-    if (!controlled) setInner(nextLiked);
-    setTotal(nextCount);
+    if (!controlled) {
+      setInner(nextLiked);
+      setLocalCount(nextCount);
+    }
     onChange?.(nextLiked, nextCount);
     if (pointer && !reducedMotion()) run(nextLiked, nextCount);
     else if (rootRef.current) rootRef.current.dataset.instant = "";

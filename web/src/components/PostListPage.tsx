@@ -5,12 +5,27 @@ import ClickSpark from "./ClickSpark";
 import PostCard from "./PostCard";
 
 export default function PostListPage({ query, empty }: { query: (page: number) => string; empty?: string }) {
-  const [data, setData] = useState<Paged<PostSummary> | null>(null);
+  return <PostList key={query(1)} query={query} empty={empty} />;
+}
+
+function PostList({ query, empty }: { query: (page: number) => string; empty?: string }) {
+  const [result, setResult] = useState<{ url: string; data: Paged<PostSummary> | null; failed: boolean } | null>(null);
   const [page, setPage] = useState(1);
+  const url = query(page);
+  const current = result?.url === url ? result : null;
+  const data = current?.data;
   useEffect(() => {
-    setData(null);
-    api.get<Paged<PostSummary>>(query(page)).then(setData).catch(console.error);
-  }, [page, query]);
+    const controller = new AbortController();
+    api.get<Paged<PostSummary>>(url, { signal: controller.signal })
+      .then((data) => {
+        if (!controller.signal.aborted) setResult({ url, data, failed: false });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setResult({ url, data: null, failed: true });
+      });
+    return () => controller.abort();
+  }, [url]);
+  if (current?.failed) return <p role="alert" className="py-10 text-center text-sm text-red-500">文章加载失败，请刷新页面重试。</p>;
   if (!data)
     return (
       <div className="space-y-4">

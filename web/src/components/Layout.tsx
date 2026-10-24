@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import GlassSurface from "./GlassSurface";
 import GradualBlur from "./GradualBlur";
-import { useTheme } from "../lib/theme";
+import { useTheme } from "../lib/themeContext";
 import BrandLogo from "./BrandLogo";
 
 const nav =
@@ -137,7 +137,9 @@ export default function Layout() {
         )}
       </header>
       <main className="flex-1">
-        <Outlet />
+        <Suspense fallback={<p role="status" className="px-5 pt-28 text-center text-sm text-ink-faint">页面加载中…</p>}>
+          <Outlet />
+        </Suspense>
       </main>
       <footer className="border-t border-line bg-canvas-dim dark:border-white/10 dark:bg-[#101013]">
         <div className="mx-auto max-w-5xl px-5 py-8 text-center text-xs leading-6 text-ink-faint dark:text-white/40">

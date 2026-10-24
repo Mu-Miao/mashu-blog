@@ -197,7 +197,8 @@ export default function WavesCanvas({
     });
     const intersect = new IntersectionObserver((entries) => {
       visible = entries.some((e) => e.isIntersecting);
-      visible ? wake() : sleep();
+      if (visible) wake();
+      else sleep();
     });
 
     layout();
@@ -206,17 +207,19 @@ export default function WavesCanvas({
     observer.observe(root);
     intersect.observe(root);
     document.addEventListener("visibilitychange", onVisibility);
-    reduceMotion.addEventListener("change", () => {
+    const onMotionChange = () => {
       sleep();
       draw();
       wake();
-    });
+    };
+    reduceMotion.addEventListener("change", onMotionChange);
 
     return () => {
       sleep();
       observer.disconnect();
       intersect.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
+      reduceMotion.removeEventListener("change", onMotionChange);
     };
   }, [text, fontFamily, fontWeight, textSize, cellSize, dotSize, color, backgroundColor, speed, fade, targetFps]);
 

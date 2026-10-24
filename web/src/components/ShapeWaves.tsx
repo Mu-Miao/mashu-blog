@@ -303,34 +303,36 @@ export default function ShapeWaves({
   const applyMaskRef = useRef(() => {});
   const onErrorRef = useRef(onError);
 
-  settingsRef.current = {
-    text: String(text ?? ''),
-    fontFamily,
-    fontWeight,
-    textSize,
-    shapes,
-    cellSize: Math.max(2, cellSize),
-    dotSize,
-    color,
-    hoverColor,
-    backgroundColor,
-    speed,
-    scale: Math.max(0.05, scale),
-    contrast,
-    brightness,
-    flow,
-    direction,
-    fade,
-    interactive,
-    splashRadius,
-    splashStrength,
-    glow,
-    intro,
-    introDuration: Math.max(0.1, introDuration),
-    introKey,
-    paused
-  };
-  onErrorRef.current = onError;
+  useEffect(() => {
+    settingsRef.current = {
+      text: String(text ?? ''),
+      fontFamily,
+      fontWeight,
+      textSize,
+      shapes,
+      cellSize: Math.max(2, cellSize),
+      dotSize,
+      color,
+      hoverColor,
+      backgroundColor,
+      speed,
+      scale: Math.max(0.05, scale),
+      contrast,
+      brightness,
+      flow,
+      direction,
+      fade,
+      interactive,
+      splashRadius,
+      splashStrength,
+      glow,
+      intro,
+      introDuration: Math.max(0.1, introDuration),
+      introKey,
+      paused
+    };
+    onErrorRef.current = onError;
+  });
 
   const settingsSignature = [
     shapes,

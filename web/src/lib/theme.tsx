@@ -1,14 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
-
-type Theme = "light" | "dark";
-
-const ThemeContext = createContext<{ theme: Theme; toggle: () => void }>({
-  theme: "light",
-  toggle: () => {},
-});
+import { useCallback, useEffect, useState } from "react";
+import { ThemeContext, type Theme } from "./themeContext";
+import { readStorage, writeStorage } from "./storage";
 
 function initial(): Theme {
-  const stored = localStorage.getItem("theme");
+  const requested = new URLSearchParams(location.search).get("theme");
+  if (requested === "light" || requested === "dark") return requested;
+  const stored = readStorage("theme");
   if (stored === "light" || stored === "dark") return stored;
   return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
@@ -18,12 +15,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("theme", theme);
+    writeStorage("theme", theme);
   }, [theme]);
 
   const toggle = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), []);
 
   return <ThemeContext.Provider value={{ theme, toggle }}>{children}</ThemeContext.Provider>;
 }
-
-export const useTheme = () => useContext(ThemeContext);

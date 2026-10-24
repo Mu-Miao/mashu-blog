@@ -11,7 +11,7 @@ import GitHubShowcase from "../components/GitHubShowcase";
 import Seo from "../components/Seo";
 import Comments from "../components/Comments";
 import LineSidebar from "../components/LineSidebar";
-import { useTheme } from "../lib/theme";
+import { useTheme } from "../lib/themeContext";
 
 function Page({ children, wide = false, flush = false }: { children: React.ReactNode; wide?: boolean; flush?: boolean }) {
   return (
@@ -77,9 +77,8 @@ function useArticle(html: string) {
         sec.append(n);
         article?.append(sec);
       } else {
-        article?.lastElementChild?.tagName === "SECTION"
-          ? article.lastElementChild.append(n)
-          : article?.append(n);
+        if (article?.lastElementChild?.tagName === "SECTION") article.lastElementChild.append(n);
+        else article?.append(n);
       }
     });
     return { html: article?.innerHTML ?? "", headings, cover, coverAlt };
@@ -202,18 +201,23 @@ export function NotFound({ title = "页面不存在", sub = "它可能搬家了�
 
 export function Post() {
   const { slug } = useParams();
+  return <PostContent key={slug} slug={slug ?? ""} />;
+}
+
+function PostContent({ slug }: { slug: string }) {
   const [post, setPost] = useState<PostDetail | null>(null);
   const [adj, setAdj] = useState<Adjacent | null>(null);
   const [missing, setMissing] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setPost(null); setAdj(null); setMissing(false);
+    const controller = new AbortController();
     const s = encodeURIComponent(slug ?? "");
-    api.get<PostDetail>(`/posts/${s}`)
+    api.get<PostDetail>(`/posts/${s}`, { signal: controller.signal })
       .then(setPost)
-      .catch(() => setMissing(true));
-    api.get<Adjacent>(`/posts/${s}/adjacent`).then(setAdj).catch(() => {});
+      .catch(() => { if (!controller.signal.aborted) setMissing(true); });
+    api.get<Adjacent>(`/posts/${s}/adjacent`, { signal: controller.signal }).then(setAdj).catch(() => {});
+    return () => controller.abort();
   }, [slug]);
 
   const { html, headings, cover, coverAlt } = useArticle(post?.rendered ?? "");

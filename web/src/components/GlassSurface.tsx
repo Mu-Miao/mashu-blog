@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useEffect, useState, useRef, useId } from 'react';
+import { useCallback, useEffect, useState, useRef, useId } from 'react';
 import './GlassSurface.css';
 
 const GlassSurface = ({
@@ -29,7 +29,12 @@ const GlassSurface = ({
   const redGradId = `red-grad-${uniqueId}`;
   const blueGradId = `blue-grad-${uniqueId}`;
 
-  const [svgSupported, setSvgSupported] = useState(false);
+  const [svgSupported] = useState(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+    const isWebkit = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    if (isWebkit || /Firefox/.test(navigator.userAgent)) return false;
+    return CSS.supports('backdrop-filter', 'url(#glass-filter)');
+  });
 
   const containerRef = useRef(null);
   const feImageRef = useRef(null);
@@ -38,7 +43,7 @@ const GlassSurface = ({
   const blueChannelRef = useRef(null);
   const gaussianBlurRef = useRef(null);
 
-  const generateDisplacementMap = () => {
+  const updateDisplacementMap = useCallback(() => {
     const rect = containerRef.current?.getBoundingClientRect();
     const actualWidth = rect?.width || 400;
     const actualHeight = rect?.height || 200;
@@ -63,12 +68,8 @@ const GlassSurface = ({
       </svg>
     `;
 
-    return `data:image/svg+xml,${encodeURIComponent(svgContent)}`;
-  };
-
-  const updateDisplacementMap = () => {
-    feImageRef.current?.setAttribute('href', generateDisplacementMap());
-  };
+    feImageRef.current?.setAttribute('href', `data:image/svg+xml,${encodeURIComponent(svgContent)}`);
+  }, [borderWidth, borderRadius, brightness, opacity, blur, mixBlendMode, redGradId, blueGradId]);
 
   useEffect(() => {
     updateDisplacementMap();
@@ -86,13 +87,7 @@ const GlassSurface = ({
 
     gaussianBlurRef.current?.setAttribute('stdDeviation', displace.toString());
   }, [
-    width,
-    height,
-    borderRadius,
-    borderWidth,
-    brightness,
-    opacity,
-    blur,
+    updateDisplacementMap,
     displace,
     distortionScale,
     redOffset,
@@ -100,48 +95,21 @@ const GlassSurface = ({
     blueOffset,
     xChannel,
     yChannel,
-    mixBlendMode
+    width,
+    height
   ]);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const resizeObserver = new ResizeObserver(() => {
-      setTimeout(updateDisplacementMap, 0);
-    });
+    const resizeObserver = new ResizeObserver(updateDisplacementMap);
 
     resizeObserver.observe(containerRef.current);
 
     return () => {
       resizeObserver.disconnect();
     };
-  }, []);
-
-  useEffect(() => {
-    setTimeout(updateDisplacementMap, 0);
-  }, [width, height]);
-
-  useEffect(() => {
-    setSvgSupported(supportsSVGFilters());
-  }, []);
-
-  const supportsSVGFilters = () => {
-    if (typeof window === 'undefined' || typeof document === 'undefined') {
-      return false;
-    }
-
-    const isWebkit = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-    const isFirefox = /Firefox/.test(navigator.userAgent);
-
-    if (isWebkit || isFirefox) {
-      return false;
-    }
-
-    const div = document.createElement('div');
-    div.style.backdropFilter = `url(#${filterId})`;
-
-    return div.style.backdropFilter !== '';
-  };
+  }, [updateDisplacementMap]);
 
   const containerStyle = {
     ...style,

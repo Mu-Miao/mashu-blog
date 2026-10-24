@@ -38,10 +38,12 @@ These cost real time when rediscovered. Check here first.
   `evaluate_script` DOM probes instead.
 - **Lenis** (smooth scroll) only updates transforms on real `wheel` events; `scrollTop=`/`scrollTo=`
   bypass it. Test scroll-linked effects by dispatching a `WheelEvent`.
-- **`crypto.randomUUID()` needs a secure context.** `Comments.tsx` calls it at module scope, so on
-  `http://<IP>:8080` article pages throw `TypeError: crypto.randomUUID is not a function` and React
-  leaves `#root` empty (white page). Home/archive are fine. Verify article/comment behavior over
-  https://blog.mashutaba.best, or add a fallback UUID if IP access must work.
+- **`crypto.randomUUID()` needs a secure context.** Comment visitor IDs now use
+  `crypto.getRandomValues()` with a legacy fallback in `web/src/lib/commentVisitor.ts`, so ordinary
+  HTTP article pages work too. Keep storage optional, including the inline theme script in
+  `web/index.html`; restricted storage must not prevent reading or commenting. Run `cd web && npm test`
+  for the browser compatibility regressions, and verify an HTTP origin that is not localhost
+  (browsers treat localhost as a secure context).
 
 ## Tailwind / Vite
 
